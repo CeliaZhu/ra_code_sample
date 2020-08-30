@@ -1,2 +1,2 @@
-# crime-lab-data-assessment
-The University of Chicago Urban Lab - Crime and Education Lab **Data Assessment** for Summer Data Research Assistant 2020.
+## Code Samples for Research Assistantship 
+This repository houses my code samples used in applying for research assistatnship. 
