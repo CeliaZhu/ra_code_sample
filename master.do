@@ -11,18 +11,18 @@ set varabbrev off
 
 global data /Users/celiazhu/Box/projects/ra_code_sample/data
 global output /Users/celiazhu/Box/projects/ra_code_sample
-global code /Users/celiazhu/Box/projects/ra_code_sample
+global src /Users/celiazhu/Box/projects/ra_code_sample
 
 * 1) Clean demographic data
-do "$code/clean_demo/src/clean_demo"
+do "$src/clean_demo/src/clean_demo"
 
 * 2) Clean case data and merge with demographic data
-do "$code/clean_case/src/clean_case"
+do "$src/clean_case/src/clean_case"
 
 * 3) Clean grade data for defendants in early adulthood
-do "$code/clean_grades/src/clean_grades"
+do "$src/clean_grades/src/clean_grades"
 
 * 4) Statistical analysis
-do "$code/analysis/src/analysis"
+do "$src/analysis/src/analysis"
 
 // EOF

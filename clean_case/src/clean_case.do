@@ -33,3 +33,5 @@ foreach var of varlist arrest_date bdate{
 
 * Save cleaned case and demographic data
 save "$output/clean_case/output/case_demo_clean.dta", replace
+
+// EOF

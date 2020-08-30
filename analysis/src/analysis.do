@@ -149,3 +149,5 @@ addnotes("Model 1: OLS; Model 2: Logit;" ///
 "Model 3: Propensity score matching (ATT); Model 4: Propensity Score Matching (ATET)" ///
 "Souce: Cook County State's Attorney's Office") ///
 replace numbers
+
+// EOF

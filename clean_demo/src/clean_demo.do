@@ -27,3 +27,5 @@ assert gender == "M" | gender == "F"
 
 * Save cleaned demographic data
 save "$output/clean_demo/output/demo_clean.dta", replace
+
+// EOF

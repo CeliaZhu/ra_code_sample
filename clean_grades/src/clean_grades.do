@@ -46,3 +46,5 @@ su gpa10
 keep person_id gpa*
 isid person_id
 save "$output/clean_grades/output/grades_clean.dta", replace
+
+// EOF
