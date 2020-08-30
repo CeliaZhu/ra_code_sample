@@ -1,0 +1,344 @@
+---
+title: Stata Code Sample
+author: Xiling Zhu <xiling@uchicago.edu>
+date: Aug 28, 2020
+number-sections: yes
+header-includes:
+  - \usepackage{multicol}
+  - \usepackage{tabularx}
+  - \usepackage{booktabs}
+  - \usepackage{lscape}
+  - \usepackage{graphicx}
+  - \usepackage{float}
+---
+
+## Background
+
+In January 2012, the Cook County State’s Attorney’s Office established a program
+intended to reduce re-arrest among people on bail awaiting trial.
+The program ran through October 2013. We evaluate the effectiveness of the program
+
+## 0. Preamble
+
+      clear all
+      set more off
+      set varabbrev off
+
+      global data /Users/celiazhu/Box/projects/ra_code_sample/Stata/data
+      global output /Users/celiazhu/Box/projects/ra_code_sample/Stata/output
+      global processed /Users/celiazhu/Box/projects/ra_code_sample/Stata/processed
+
+## 1. Data Cleaning
+
+### 1.1 Clean demographic Data
+
+      import delimited "$data/demo.csv", clear
+
+Make sure person_id is uid
+
+      duplicates drop
+      isid person_id
+
+Recode gender so that males are consistently code as "M", and females "F"
+
+      tab gender, m
+      replace gender = "F" if gender == "female"
+      replace gender = "M" if gender == "male"
+
+Check if gender is consistently coded
+
+      assert gender == "M" | gender == "F"
+
+Save cleaned demographic data
+
+      save "$processed/demo_clean.dta", replace
+
+### 1.2 Clean case data
+
+      import delimited "$data/case.csv", clear
+
+Make sure caseid is uid
+
+      isid caseid
+
+Merge (possible to have multiple cases for one person)
+
+Note: No other variables (except person_id) in demo and case sharing the same variable name
+
+      merge m:1 person_id using "$processed/demo_clean.dta", nogen keep(3)
+
+Restrict the data to only individuals arrested in Chicago
+
+      replace address = lower(address)
+      keep if strpos(address, ", chicago") > 0
+
+Calculate age
+
+      qui: codebook arrest_date bdate
+
+      foreach var of varlist arrest_date bdate{
+        gen `var'_dt = date(`var', "YMD")
+      }
+      gen age = round((arrest_date_dt - bdate_dt)/365.25,0.1)
+
+Save cleaned case and demographic data
+
+      save "$processed/case_demo_clean.dta", replace
+
+### 1.3 Clean grade data for defendants in their early early adulthood (18-24)
+
+Select defendants between the age of 18 and 24
+
+      keep if inrange(age, 18, 24) == 1
+      keep person_id
+
+      duplicates drop
+      isid person_id
+
+      save "$processed/early_adulthood.dta", replace
+
+Keep grade data for young adults (18-24)
+
+      import delimited "$data/grades.csv", clear
+      merge 1:1 person_id using "$processed/early_adulthood.dta", nogen keep(3)
+
+Construct 9th and 10th GPA for defendants between the age of 18 and 24
+
+      foreach g of varlist gr* {
+        gen byte n_`g' = cond(`g' == "A", 4, ///
+                    cond(`g' == "B", 3, ///
+                    cond(`g' == "C", 2, ///
+                    cond(`g' == "D", 1, ///
+                    cond(`g' == "F", 0, .)))))
+      }
+
+      forvalues i = 9/10{
+        local grade`i' n_gr`i'_*
+         egen gpa`i' = rmean(`grade`i'')
+      }
+
+      su gpa9
+      su gpa10
+
+Keep person id and gpa for grade 9 and 10
+
+      keep person_id gpa*
+      isid person_id
+      save "$processed/grades_clean.dta", replace
+
+## 2. Statistical Analysis
+
+Do not use gpa to inform analysis because theses are only for young adults
+
+      use "$processed/case_demo_clean.dta", clear
+
+The study population should have 25,000 subjects
+
+      assert(_N == 25000)
+
+Label variables
+
+      label var age "Age"
+      label var prior_arrests "Number of prior arrests"
+      label var re_arrest "Re-arrested"
+
+### 2.1 Balance tests for demographic characteristics
+
+Create dummies for gender and race
+
+      tab gender, m gen(gender_)
+      rename gender_1 female
+      label var female "Female"
+      rename gender_2 male
+      label var male "Male"
+
+      tab race, m gen(race_)
+      rename race_1 asian
+      rename race_2 black
+      rename race_3 white
+      label var asian "Asian"
+      label var black "Black"
+      label var white "White"
+
+Calculate mean by treatment status, difference in means, and p-value
+
+      local balancevar "female male asian black white prior_arrests age"
+      balancetable treat `balancevar' using "$output/balance_test.tex", ///
+      vce(robust) pval ///
+      ctitles("Control group" "Treatment group" "Difference" "P value") ///
+      booktabs varlabels replace
+
+\begin{table}[H]
+\centering
+\caption{Balance test}
+\input{/Users/celiazhu/Box/projects/ra_code_sample/Stata/output/balance_test.tex}
+\end{table}
+
+
+### 2.2 Visualize number of prior arrests by enrollment status and race
+
+Create a numerical variable for race
+
+      preserve
+      encode race, gen(n_race)
+
+      qui: codebook n_race
+
+      gen avg = .
+      gen ci_low = .
+      gen ci_high = .
+
+Calculate means and confidence intervals
+
+      qui: mean prior_arrests, over(treat n_race)
+      matrix M = r(table)
+      matrix list M
+
+      forvalues i = 1/6 {
+      	if inrange(`i', 1, 3) == 1{
+          replace avg = M[1, `i'] if treat == 0 & n_race == `i'
+          replace ci_low = M[5, `i'] if treat == 0 & n_race == `i'
+          replace ci_high = M[6, `i'] if treat == 0 & n_race == `i'
+      	}
+
+      	if inrange(`i', 4, 6) == 1 {
+      	replace avg = M[1, `i'] if treat == 1 & n_race == `i'-3
+          replace ci_low = M[5, `i'] if treat == 1 & n_race == `i'-3
+          replace ci_high = M[6, `i'] if treat == 1 & n_race == `i'-3
+      	}
+      }
+
+Count observations
+
+      forvalues i = 1/6 {
+          if inrange(`i', 1, 3) == 1 {
+      	count if treat == 0 & n_race == `i' & !missing(prior_arrests)
+      	}
+
+      	if inrange(`i', 4, 6) == 1 {
+      	count if treat == 1 & n_race == `i'-3 & !missing(prior_arrests)
+      	}
+
+      	local `i'N = r(N)
+      }
+
+Plot
+
+      gen treat_race = n_race if treat == 0
+      replace treat_race = n_race + 4 if treat == 1
+
+      twoway (bar avg treat_race if n_race == 1, fcolor(maroon) ///
+              fintensity(inten70) lcolor(white) barw(0.7)) ///
+             (bar avg treat_race if n_race == 2, fcolor(maroon) ///
+             fintensity(inten50) lcolor(white) barw(0.7)) ///
+             (bar avg treat_race if n_race == 3, fcolor(maroon) ///
+             fintensity(inten30) lcolor(white) barw(0.7)) ///
+      		   (rcap ci_low ci_high treat_race, lcolor(gs5)), ///
+             legend(row(1) order(1 "Asian" 2 "Black" 3 "White" 4 "95% C.I.")) ///
+             xlabel(2"Unenrolled" 6"Enrolled", noticks) xtitle("Enrollment status") ///
+             ylabel(0(1)4) ytitle("Average number of prior arrests", ///
+             margin(medium) size(medium)) ///
+             title("Number of prior arrests imbalanced" ///
+             "between enrolled and unenrolled groups", size(medium)) ///
+             note("Number of defendants:" ///
+             "Asian unenrolled `1N', Black unenrolled `2N', White unenrolled `3N'" ///
+      	     "Asian enrolled `4N', Black enrolled `5N', White enrolled `6N'") ///
+             caption("Source: Cook County State's Attorney's Office", ///
+             justification(left) size(vsmall) linegap(0.8) position(5) span) ///
+             graphregion( color(white) ) plotregion(fcolor(white))
+
+      graph export "$output/prior_arrests.png", replace
+      restore
+
+\begin{figure}[H]
+\centering
+\caption{Number of prior arrests imbalanced bewteen enrolled and unerolled groups}
+\includegraphics[width = \textwidth]{/Users/celiazhu/Box/projects/ra_code_sample/Stata/output/prior_arrests.png}
+\end{figure}
+
+### 2.3 Estimate the effect of the program on reducing the likelihood of re-arrest before disposition
+
+One difficulty is that we don't have enough information about the implementation of the program.
+We are not sure if the program was randomized and how was the compliance.
+
+#### Specification 1: OLS
+
+
+We start with "naive" OLS. It can correctly estimate the average treatment effect if
+this program was a randomized experiment with perfect compliance; or it was an
+observational study satisfying the two conditions: 1) there is no selection on
+unobservables and we've controlled all observables that could be selected upon;
+and 2) how people are self-selected based on those variables can be approximated
+by a linear function. But these assumptions are unlikely to be true.
+
+Nevertheless, we show there is a correlation between treatment and the reduction of re-arrests,
+and the coefficient is significantly different from zero at a significance level of 5%.
+
+If the program was a randomized trial, the treatment was administered on the case level,
+not on the individual level. Hence, we don't use cluster here.
+
+      eststo clear
+
+      eststo: qui reg re_arrest treat `balancevar', rob
+
+#### Specification 2: Logit
+
+
+Assume the program was not an experiment, we can improve our prediction on the likelihood
+by using a logit model instead of a linear probability model, which was implemented in
+specification 1. But the results given by logit specification is for prediction,
+for not causal inference.
+
+      eststo: qui logit re_arrest treat `balancevar', rob
+
+#### Specification 3: Weighted propensity score matching
+
+
+To estimate the causal effect of this treatment given that the program was observational,
+not experimental, we need to assume that there is no selection on unobservables
+and we've controlled all observables that could be selected upon.
+However, we can relax the assumption on the functional form.
+
+Still, the estimate based upon propensity score matching is not entirely valid,
+because we omit variables such as grades, household income, etc..
+
+However, this is less restrictive and therefore more plausible than the OLS estimate,
+and better serves the purpose of causal inference compared to logit estimate.
+
+In propensity score matching, the treatment also significantly reduces the likelihood of rearrest.
+
+      qui logit treat `balancevar'
+      predict pscore
+
+Common support
+
+      forvalues i = 1/2 {
+        su pscore if treat == `i' -1
+        drop if inrange(pscore, r(min), r(max)) == 0
+      }
+
+Weight for average treatment effect (ATE)
+
+      gen ate_weight = (1/pscore) if treat == 1
+      replace ate_weight = 1/(1-pscore) if treat == 0
+      eststo: qui reg re_arrest treat [pw = ate_weight]
+
+Weight for average treatment effect on the treated (ATET)
+
+      gen atet_weight = 1 if treat == 1
+      replace atet_weight = pscore/(1-pscore) if treat == 0
+      eststo: qui reg re_arrest treat [pw = atet_weight]
+
+Export results of three specifications
+
+    esttab using "$output/estimation.tex", se booktabs label ///
+    addnotes("Model 1: OLS; Model 2: Logit;" ///
+    "Model 3: Propensity score matching (ATT); Model 4: Propensity Score Matching (ATET)" ///
+    "Souce: Cook County State's Attorney's Office") ///
+    replace numbers
+
+\begin{table}
+\centering
+\caption{Estimation}
+\input{/Users/celiazhu/Box/projects/ra_code_sample/Stata/output/estimation.tex}
+\end{table}
