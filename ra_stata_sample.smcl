@@ -3,7 +3,7 @@
       name:  {res}<unnamed>
        {txt}log:  {res}/Users/celiazhu/Box/projects/ra_code_sample/ra_stata_sample.smcl
   {txt}log type:  {res}smcl
- {txt}opened on:  {res}30 Aug 2020, 22:28:45
+ {txt}opened on:  {res}31 Aug 2020, 07:58:33
 {txt}
 {com}. //_1
 .   clear all
@@ -95,37 +95,10 @@
 {txt}file /Users/celiazhu/Box/projects/ra_code_sample/processed/case_demo_clean.dta saved
 
 {com}. //_15
-.   keep if inrange(age, 18, 24) == 1
-{txt}(20,513 observations deleted)
-
-{com}.   keep person_id
-{txt}
-{com}. //_16
-.   duplicates drop
-
-{p 0 4}{txt}Duplicates in terms of {txt} all variables{p_end}
-
-(1,576 observations deleted)
-
-{com}.   isid person_id
-{txt}
-{com}. //_17
-.   save "$processed/early_adulthood.dta", replace
-{txt}file /Users/celiazhu/Box/projects/ra_code_sample/processed/early_adulthood.dta saved
-
-{com}. //_18
 .   import delimited "$data/grades.csv", clear
 {res}{text}(17 vars, 11,251 obs)
 
-{com}.   merge 1:1 person_id using "$processed/early_adulthood.dta", nogen keep(3)
-{res}
-{txt}{col 5}Result{col 38}# of obs.
-{col 5}{hline 41}
-{col 5}not matched{col 30}{res}               0
-{txt}{col 5}matched{col 30}{res}             117{txt}  
-{col 5}{hline 41}
-
-{com}. //_19
+{com}. //_16
 .   foreach g of varlist gr* {c -(}
 {txt}  2{com}.     gen byte n_`g' = cond(`g' == "A", 4, ///
 >                 cond(`g' == "B", 3, ///
@@ -133,43 +106,43 @@
 >                 cond(`g' == "D", 1, ///
 >                 cond(`g' == "F", 0, .)))))
 {txt}  3{com}.   {c )-}
-{txt}(16 missing values generated)
-(25 missing values generated)
-(25 missing values generated)
-(17 missing values generated)
-(19 missing values generated)
-(20 missing values generated)
-(25 missing values generated)
-(20 missing values generated)
-(23 missing values generated)
-(17 missing values generated)
-(24 missing values generated)
-(25 missing values generated)
-(20 missing values generated)
-(29 missing values generated)
-(21 missing values generated)
-(17 missing values generated)
+{txt}(2,251 missing values generated)
+(2,251 missing values generated)
+(2,251 missing values generated)
+(2,251 missing values generated)
+(2,251 missing values generated)
+(2,251 missing values generated)
+(2,251 missing values generated)
+(2,251 missing values generated)
+(2,251 missing values generated)
+(2,251 missing values generated)
+(2,251 missing values generated)
+(2,251 missing values generated)
+(2,251 missing values generated)
+(2,251 missing values generated)
+(2,251 missing values generated)
+(2,251 missing values generated)
 
-{com}. //_20
+{com}. //_17
 .   forvalues i = 9/10{c -(}
 {txt}  2{com}.     local grade`i' n_gr`i'_*
 {txt}  3{com}.      egen gpa`i' = rmean(`grade`i'')
 {txt}  4{com}.   {c )-}
 {txt}
-{com}. //_21
+{com}. //_18
 .   su gpa9
 
 {txt}    Variable {c |}        Obs        Mean    Std. Dev.       Min        Max
 {hline 13}{c +}{hline 57}
-{space 8}gpa9 {c |}{res}        117    2.610969    .6703728         .5          4
+{space 8}gpa9 {c |}{res}     11,251    2.661426    .6469981          0          4
 {txt}
 {com}.   su gpa10
 
 {txt}    Variable {c |}        Obs        Mean    Std. Dev.       Min        Max
 {hline 13}{c +}{hline 57}
-{space 7}gpa10 {c |}{res}        117    2.662525    .5596257   1.142857          4
+{space 7}gpa10 {c |}{res}     11,251    2.661316    .6479062        .25          4
 {txt}
-{com}. //_22
+{com}. //_19
 .   keep person_id gpa*
 {txt}
 {com}.   isid person_id
@@ -177,13 +150,13 @@
 {com}.   save "$processed/grades_clean.dta", replace
 {txt}file /Users/celiazhu/Box/projects/ra_code_sample/processed/grades_clean.dta saved
 
-{com}. //_23
+{com}. //_20
 .   use "$processed/case_demo_clean.dta", clear
 {txt}
-{com}. //_24
+{com}. //_21
 .   assert(_N == 25000)
 {txt}
-{com}. //_25
+{com}. //_22
 .   label var age "Age"
 {txt}
 {com}.   label var prior_arrests "Number of prior arrests"
@@ -192,7 +165,7 @@
 {txt}
 {com}.   label var treat "Enrolled into program"
 {txt}
-{com}. //_26
+{com}. //_23
 .   tab gender, m gen(gender_)
 
      {txt}gender {c |}      Freq.     Percent        Cum.
@@ -210,7 +183,7 @@
 {res}{txt}
 {com}.   label var male "Male"
 {txt}
-{com}. //_27
+{com}. //_24
 .   tab race, m gen(race_)
 
        {txt}race {c |}      Freq.     Percent        Cum.
@@ -233,10 +206,10 @@
 {txt}
 {com}.   label var white "White"
 {txt}
-{com}. //_28
+{com}. //_25
 .   local balancevar "female male asian black white prior_arrests age"
 {txt}
-{com}. //_29
+{com}. //_26
 .   eststo clear
 {txt}
 {com}.   qui estpost su `balancevar'
@@ -245,21 +218,21 @@
 >   cells("mean sd min max") nonumber booktabs
 {res}{txt}(output written to {browse  `"/Users/celiazhu/Box/projects/ra_code_sample/output/summary_statistics.tex"'})
 
-{com}. //_30
+{com}. //_27
 .   balancetable treat `balancevar' using "$output/balance_test.tex", ///
 >   vce(robust) pval ///
 >   ctitles("Control group" "Treatment group" "Difference" "P value") ///
 >   booktabs varlabels replace
 {res}{txt}
-{com}. //_31
+{com}. //_28
 .   preserve
 {txt}
 {com}.   encode race, gen(n_race)
 {txt}
-{com}. //_32
+{com}. //_29
 .   qui: codebook n_race
 {txt}
-{com}. //_33
+{com}. //_30
 .   gen avg = .
 {txt}(25,000 missing values generated)
 
@@ -269,7 +242,7 @@
 {com}.   gen ci_high = .
 {txt}(25,000 missing values generated)
 
-{com}. //_34
+{com}. //_31
 .   qui: mean prior_arrests, over(treat n_race)
 {txt}
 {com}.   matrix M = r(table)
@@ -289,14 +262,14 @@
 {txt}  crit {res}    1.9600589     1.9600589     1.9600589     1.9600589     1.9600589     1.9600589
 {txt} eform {res}            0             0             0             0             0             0
 {reset}
-{com}. //_35
+{com}. //_32
 .   forvalues i = 1/6 {c -(}
 {txt}  2{com}.       if inrange(`i', 1, 3) == 1{c -(}
 {txt}  3{com}.       replace avg = M[1, `i'] if treat == 0 & n_race == `i'
 {txt}  4{com}.       replace ci_low = M[5, `i'] if treat == 0 & n_race == `i'
 {txt}  5{com}.       replace ci_high = M[6, `i'] if treat == 0 & n_race == `i'
 {txt}  6{com}.       {c )-}
-{txt}  7{com}. //_36
+{txt}  7{com}. //_33
 .       if inrange(`i', 4, 6) == 1 {c -(}
 {txt}  8{com}.       replace avg = M[1, `i'] if treat == 1 & n_race == `i'-3
 {txt}  9{com}.       replace ci_low = M[5, `i'] if treat == 1 & n_race == `i'-3
@@ -322,16 +295,16 @@
 (2,861 real changes made)
 (2,861 real changes made)
 
-{com}. //_37
+{com}. //_34
 .   forvalues i = 1/6 {c -(}
 {txt}  2{com}.       if inrange(`i', 1, 3) == 1 {c -(}
 {txt}  3{com}.       count if treat == 0 & n_race == `i' & !missing(prior_arrests)
 {txt}  4{com}.       {c )-}
-{txt}  5{com}. //_38
+{txt}  5{com}. //_35
 .       if inrange(`i', 4, 6) == 1 {c -(}
 {txt}  6{com}.       count if treat == 1 & n_race == `i'-3 & !missing(prior_arrests)
 {txt}  7{com}.       {c )-}
-{txt}  8{com}. //_39
+{txt}  8{com}. //_36
 .       local `i'N = r(N)
 {txt}  9{com}.   {c )-}
   {res}576
@@ -341,14 +314,14 @@
   9,625
   2,861
 {txt}
-{com}. //_40
+{com}. //_37
 .   gen treat_race = n_race if treat == 0
 {txt}(13,149 missing values generated)
 
 {com}.   replace treat_race = n_race + 4 if treat == 1
 {txt}(13,149 real changes made)
 
-{com}. //_41
+{com}. //_38
 .   twoway (bar avg treat_race if n_race == 1, fcolor(maroon) ///
 >           fintensity(inten70) lcolor(white) barw(0.7)) ///
 >          (bar avg treat_race if n_race == 2, fcolor(maroon) ///
@@ -369,35 +342,35 @@
 >          justification(left) size(vsmall) linegap(0.8) position(5) span) ///
 >          graphregion( color(white) ) plotregion(fcolor(white))
 {res}{txt}
-{com}. //_42
+{com}. //_39
 .   graph export "$output/prior_arrests.png", replace
 {txt}(file /Users/celiazhu/Box/projects/ra_code_sample/output/prior_arrests.png written in PNG format)
 
 {com}.   restore
 {txt}
-{com}. //_43
+{com}. //_40
 .   unique person_id
 {txt}Number of unique values of person_id is  {res}14353
 {txt}Number of records is  {res}25000
 {txt}
-{com}. //_44
+{com}. //_41
 .   eststo clear
 {txt}
-{com}. //_45
+{com}. //_42
 .   eststo: qui reg re_arrest treat `balancevar', rob
 {txt}({res}est1{txt} stored)
 
-{com}. //_46
+{com}. //_43
 .   eststo: qui logit re_arrest treat `balancevar', rob
 {txt}({res}est2{txt} stored)
 
-{com}. //_47
+{com}. //_44
 .   qui logit treat `balancevar'
 {txt}
 {com}.   predict pscore
 {txt}(option {bf:pr} assumed; Pr(treat))
 
-{com}. //_48
+{com}. //_45
 .   forvalues i = 1/2 {c -(}
 {txt}  2{com}.     su pscore if treat == `i' -1
 {txt}  3{com}.     drop if inrange(pscore, r(min), r(max)) == 0
@@ -413,7 +386,7 @@
 {space 6}pscore {c |}{res}     13,133    .5649514    .1451764   .2577653   .9314315
 {txt}(5 observations deleted)
 
-{com}. //_49
+{com}. //_46
 .   gen ate_weight = (1/pscore) if treat == 1
 {txt}(11,846 missing values generated)
 
@@ -423,7 +396,7 @@
 {com}.   eststo: qui reg re_arrest treat [pw = ate_weight]
 {txt}({res}est3{txt} stored)
 
-{com}. //_50
+{com}. //_47
 .   gen atet_weight = 1 if treat == 1
 {txt}(11,846 missing values generated)
 
@@ -433,7 +406,7 @@
 {com}.   eststo: qui reg re_arrest treat [pw = atet_weight]
 {txt}({res}est4{txt} stored)
 
-{com}. //_51
+{com}. //_48
 . esttab using "$output/estimation.tex", se booktabs label ///
 > addnotes("Model 1: OLS; Model 2: Logit;" ///
 > "Model 3: Propensity score matching (ATT); Model 4: Propensity Score Matching (ATET)" ///
@@ -446,7 +419,7 @@
       {txt}name:  {res}<unnamed>
        {txt}log:  {res}/Users/celiazhu/Box/projects/ra_code_sample/ra_stata_sample.smcl
   {txt}log type:  {res}smcl
- {txt}closed on:  {res}30 Aug 2020, 22:29:07
+ {txt}closed on:  {res}31 Aug 2020, 07:58:54
 {txt}{.-}
 {smcl}
 {txt}{sf}{ul off}

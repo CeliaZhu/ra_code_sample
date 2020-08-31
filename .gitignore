@@ -57,3 +57,6 @@ Stata/src/stata.sty
 .Rproj.user/shared/notebooks/patch-chunk-names
 .Rproj.user/shared/notebooks/paths
 makefile
+ra_stata_sample.pdf
+*.dta
+*.dta
