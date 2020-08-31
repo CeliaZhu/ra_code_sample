@@ -1,0 +1,44 @@
+{
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\begin{tabular}{l*{4}{c}}
+\toprule
+                    &\multicolumn{1}{c}{(1)}&\multicolumn{1}{c}{(2)}&\multicolumn{1}{c}{(3)}&\multicolumn{1}{c}{(4)}\\
+                    &\multicolumn{1}{c}{Re-arrested}&\multicolumn{1}{c}{Re-arrested}&\multicolumn{1}{c}{Re-arrested}&\multicolumn{1}{c}{Re-arrested}\\
+\midrule
+main                &                     &                     &                     &                     \\
+Enrolled into program&     -0.0154\sym{**} &     -0.0936\sym{**} &     -0.0171\sym{**} &     -0.0170\sym{**} \\
+                    &   (0.00532)         &    (0.0330)         &   (0.00549)         &   (0.00621)         \\
+\addlinespace
+Female              &    -0.00520         &     -0.0319         &                     &                     \\
+                    &   (0.00635)         &    (0.0397)         &                     &                     \\
+\addlinespace
+Male                &           0         &           0         &                     &                     \\
+                    &         (.)         &         (.)         &                     &                     \\
+\addlinespace
+Asian               &    -0.00337         &     -0.0178         &                     &                     \\
+                    &    (0.0126)         &    (0.0790)         &                     &                     \\
+\addlinespace
+Black               &     0.00237         &      0.0143         &                     &                     \\
+                    &   (0.00619)         &    (0.0382)         &                     &                     \\
+\addlinespace
+White               &           0         &           0         &                     &                     \\
+                    &         (.)         &         (.)         &                     &                     \\
+\addlinespace
+Number of prior arrests&      0.0160\sym{***}&      0.0922\sym{***}&                     &                     \\
+                    &   (0.00162)         &   (0.00942)         &                     &                     \\
+\addlinespace
+Age                 &     0.00376\sym{***}&      0.0220\sym{***}&                     &                     \\
+                    &  (0.000456)         &   (0.00267)         &                     &                     \\
+\addlinespace
+Constant            &      0.0431\sym{***}&      -2.328\sym{***}&       0.219\sym{***}&       0.235\sym{***}\\
+                    &    (0.0120)         &    (0.0741)         &   (0.00421)         &   (0.00506)         \\
+\midrule
+Observations        &       25000         &       25000         &       24979         &       24979         \\
+\bottomrule
+\multicolumn{5}{l}{\footnotesize Standard errors in parentheses}\\
+\multicolumn{5}{l}{\footnotesize Model 1: OLS; Model 2: Logit;}\\
+\multicolumn{5}{l}{\footnotesize Model 3: Propensity score matching (ATT); Model 4: Propensity Score Matching (ATET)}\\
+\multicolumn{5}{l}{\footnotesize Souce: Cook County State's Attorney's Office}\\
+\multicolumn{5}{l}{\footnotesize \sym{*} \(p<0.05\), \sym{**} \(p<0.01\), \sym{***} \(p<0.001\)}\\
+\end{tabular}
+}
