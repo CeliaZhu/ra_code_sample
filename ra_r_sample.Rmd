@@ -1,5 +1,5 @@
 ---
-title: "Data Research Assistant - Data Assessment"
+title: "Code Sample"
 author: "Xiling Zhu"
 date: "5/29/2020"
 output: html_document
@@ -10,9 +10,9 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 pkg_list <- c("estimatr", "tidyverse", "stringr", "testthat", "lubridate", "gtsummary")
 lapply(pkg_list, require, character.only = TRUE)
 
-case <- read_csv("case.csv")
-demo <- read.csv("demo.csv")
-grades <- read.csv("grades.csv")
+case <- read_csv("data/case.csv")
+demo <- read.csv("data/demo.csv")
+grades <- read.csv("data/grades.csv")
 ```
 
 # Part 1: Data Management
@@ -110,8 +110,8 @@ case_demo_chi <- case_demo %>%
 1. Create an age variable equal to the defendant’s age at the time of arrest for each case.
 ```{r age, indent = "      "}
 case_demo_chi <- case_demo_chi %>%
-  mutate(byear = year(ymd(bdate)), arrest_year = year(arrest_date)) %>%
-  mutate(age = arrest_year - byear)
+    mutate(byear = year(ymd(bdate)), arrest_year = year(ymd(arrest_date))) %>%
+    mutate(age = (arrest_year - byear)) 
 ```
 
 2. The State’s Attorney is interested in pursuing a partnership with the Chicago Public Schools to investigate the relationship between high school achievement and criminal justice outcomes in early adulthood. To that end, the State’s Attorney’s Office has requested 9th and 10th grade course grade data from defendants between the ages of 18 and 24. These data are included in grades.csv. Please construct measures for 9th and 10th grade GPA for this target population. When constructing GPA, please use a 4 point scale, where: A=4, B=3, C=2, D=1, and F=0.
@@ -128,25 +128,25 @@ grades_clean <- grades %>%
       . == "D" ~ 1,
       . == "F" ~ 0
     ))
-  ) %>%
-  mutate(gpa = rowMeans(select(., -person_id), na.rm = TRUE))
+  )
 
-# Save the cleaned data in case colleagues need to use it.
-write_csv(grades_clean, "clean_data/grades_clean.csv")
+for (i in 9:10) {
+  grades_clean[, paste0("gpa", i)] <- rowMeans(select(grades_clean, starts_with(paste0("gr", i))), na.rm = TRUE)
+}
 ```
 
 # Part 3: Statistical Analysis
 
 Help the State’s Attorney’s Office determine if the program should be continued/expanded by estimating the program’s effect on re-arrests prior to disposition. Because we only have grades data for young adults, please do not use these data to inform your statistical analysis. To draw conclusions about this program’s effect, answer the following questions.
-```{r create case_reg}
-# Create a table for statistical analysis
-case_reg <- case_demo_chi %>%
+```{r create analysis_data}
+# Create a data set for statistical analysis
+analysis_data <- case_demo_chi %>%
   mutate(black = (race == "BLACK"), asian = (race == "ASIAN"), white = (race == "WHITE")) %>%
   mutate(male = (gender == "M"), female = (gender == "F"))
 
 # label data set to creat formatted tables
-case_reg <- expss::apply_labels(case_reg,
-  re_arrest = "Rearrested awaiting trial",
+analysis_data <- expss::apply_labels(analysis_data,
+  re_arrest = "Rearrested",
   prior_arrests = "Number of prior arrests",
   gender = "Gender",
   age = "Age",
@@ -162,32 +162,30 @@ case_reg <- expss::apply_labels(case_reg,
   )
 )
 
-# From now on I will use case_reg for statistical analysis. Save the cleaned data in case collegues need to use it.
-write_csv(case_reg, "clean_data/case_reg.csv")
-```
-
-1. Describe the demographic characteristics of the study population based on the data available to you. (Hint: the study population has 25,000 subjects).
-
-    There are 25000 subjects, or cases, in our sample. The average age is 30, and the average number of arrests before the case arrest data is 3.80. 73% of the cases are self-identified as Black. 80% of the cases self-identified as Male.
-```{r summary statistics, indent = "      "}
-# First check that the study population has 25,000 subjects.
+# Check that the study population has 25,000 subjects.
 test_that(
   "The study population has 25,000 subjects",
   expect_equal(
     25000,
-    nrow(case_reg)
+    nrow(analysis_data)
   )
 )
 
+# From now on I will use analysis_data for statistical analysis. Save the cleaned data.
+saveRDS(analysis_data, "prepare_analysis_data/output/analysis_data.rds")
+```
+
+1. Describe the demographic characteristics of the study population based on the data available. (Hint: the study population has 25,000 subjects).
+
+    There are 25000 subjects, or cases, in our sample. The average age is 30, and the average number of arrests before the case arrest data is 3.80. 73% of the cases are self-identified as Black. 80% of the cases self-identified as Male.
+```{r summary statistics, indent = "      "}
 # Descriptive statistics for demographic variables (output in html)
-summary <- tbl_summary(
-  case_reg %>%
+tbl_summary(
+  analysis_data %>%
     select(black, asian, white, male, female, prior_arrests, age),
   statistic = list(all_continuous() ~ "{mean}({sd})")
 ) %>%
   as_gt()
-
-summary
 ```
 
 2.
@@ -197,38 +195,49 @@ a. Are the treatment and control groups balanced (on race, gender, etc.), or are
     The treatment and control groups are not balanced. The average numbers of arrests prior to the case arrest date are significantly different in two groups. Cases with more prior arrests are more likely to be treated. The age characteristic is also imbalanced. Older cases are more likely to be treated. It signals the existence of self-selection.
 ```{r baseline equivalence, indent = "      "}
 # Balance table of covariates
-case_reg_balance <- case_reg %>%
+balancevar <- analysis_data %>%
   select(prior_arrests, age, treat, black, asian, white, male, female)
 
-balance <- tbl_summary(
-  case_reg_balance,
-  by = treat # split table by group
+tbl_summary(
+  balancevar,
+  by = treat, 
+  statistic = list(all_continuous() ~ "{mean}({sd})")
 ) %>%
-  add_p() %>% # test if there's difference between groups
+  add_p() %>%
   as_gt()
-
-balance
 ```
 
 b. Choose one observable characteristic and visualize the difference between those who were enrolled in the program and those who were not.
 ```{r plot, indent = "      "}
-case_reg %>%
-  group_by(treat) %>%
+fill_pal <- rep(c("#800000E6", "#800000B3", "#80000080"), times = 3)
+sig_levl <- 0.05
+
+analysis_data %>%
+  group_by(treat, race) %>%
   summarise(
     avg_arrests = mean(prior_arrests),
-    sd = sd(prior_arrests)
+    sd = sd(prior_arrests),
+    n = n()
   ) %>%
-  ggplot(aes(x = factor(treat), y = avg_arrests)) +
-  geom_point(aes(col = factor(treat)), size = 5) +
-  geom_errorbar(aes(x = factor(treat), ymin = avg_arrests - sd, ymax = avg_arrests + sd), width = 0.2, colour = "orange", alpha = 0.9, size = 1) +
+  mutate(ci = 1.96 * (sd / sqrt(n))) %>%
+  ungroup() %>%
+  mutate(
+    plot_id = c(1, 2, 3, 5, 6, 7),
+    fill_pal = rep(c("#800000E6", "#800000B3", "#80000080"), times = 2)
+  ) %>%
+  ggplot() +
+  geom_col(aes(x = plot_id, y = avg_arrests, fill = race), position = "dodge") +
+  scale_fill_manual(values = fill_pal, name = "Race", labels = c("Asian", "Black", "White")) +
+  geom_errorbar(aes(x = plot_id, ymin = avg_arrests - ci, ymax = avg_arrests + ci), width = 0.2, colour = "#666666", alpha = 0.9, size = 1) +
+  scale_x_continuous(breaks = c(2, 6), label = c("Unenrolled", "Enrolled")) +
   labs(
-    x = "Treatment status",
-    y = "Average prior arrests and standard deviation",
-    color = "Treatment status",
-    title = "Number of prior arrests is imbalanced between control and treatment group",
-    subtitle = "Average prior arrests and standard deviation by group",
+    x = "Enrollment status",
+    y = "Average number of prior arrests",
+    title = "Number of prior arrests is imbalanced between enrolled and unenrolled group",
+    subtitle = "Average number of prior arrests and 95% confidence interval by race and enrollment status",
     caption = "Source: Cook County State's Attorney's Office"
-  )
+  ) +
+  theme_minimal()
 ```
 
 3. Did participating in the program reduce the likelihood of re-arrest before disposition? Explain your answer and your methodology.
@@ -237,13 +246,13 @@ case_reg %>%
 
     From the comparison of characteristics in Part 3 2.a and the visualization in 2.b, we show that the treatment or control group are imblanced. Especially, the number of prior arrests and age are imbalanced. It signals that there exists self-selection. To estimate the treatment effect despite the possible existence of self-selection, I used three specifications.
 
-    **1. OLS (Linear Probability Model)**
+    **1. OLS (or Linear Probability Model)**
 
     The first one is a "naive" OLS model with robust standard error.
 $$
-		rearrest_{it} = \tau treat_{it} + \beta_1 priorarrests_{it} + \beta_2 gender_{it} + \beta_3 race_{it} + \beta_4 age_{it} + \epsilon_{it}
+		rearrest_{ic} = \tau treat_{ic} + \beta_1 priorarrests_{ic} + \beta_2 gender_{ic} + \beta_3 race_{ic} + \beta_4 age_{ic} + \epsilon_{ic}
 $$
-    where $i$ is the individual and $t$ is the case.
+    where $i$ is the individual and $c$ is the case.
 
     It can correctly estimate the treatment effect given that 1) there is no selection on unobservables and we've controlled all observables that could be selected upon; and 2) how people are self-selected based on those variables can be approximated by a linear function. But these assumptions are unlikely to be true. Nevertheless, we show there is a correlation between treatment and the reduction of re-arrests, and the coefficient is significantly different from zero at a significance level of 5%.
 
@@ -253,40 +262,40 @@ $$
 
     The first specification, however, is also a linear probability model as our outcome variable is binary. We can improve this by using a logit model Assuming:
 $$
-  Pr(rearrest = 1 | X_t) = \frac{exp^{X_t'\beta}}{1 + e^{X_t'\beta}}
+  Pr(rearrest = 1 | X_c) = \frac{exp^{X_c'\beta}}{1 + e^{X_c'\beta}}
 $$
 
-    where $X_t$ are prior arrests, gender, race, and age of the case $t$. In the logit model the treatment significantly reduces the likelyhood of rearrest.
+    where $X_c$ are prior arrests, gender, race, and age of the case $c$. In the logit model the treatment significantly reduces the likelyhood of rearrest.
 
 
     **3. Weighted Propensity Score Matching**
 
     The third specification is a weighted propensity score matching. To estimate the treatment effect, we need to assume that there is no selection on unobservables and we've controlled all observables that could be selected upon. However, we can relax the assumption on the functional form. The estimate based upon propensity score is not entirely valid, because we omit variables such as grades, household income, etc.. However, this is less restrictive and therefore more credible than the OLS estimate. In propensity score matchig, he treatment also significantly reduces the likelihood of rearrest.
 ```{r estimate treatment effect, indent = "      "}
-# Specification 1: OLS with clustered s.e. on individual levels
-# ols_cluster <- lm_robust(re_arrest ~ treat + prior_arrests + gender + race + age, data = case_reg, clusters = person_id)
-# I commented out the lm_robust for a faster knitting. But the result is still verifiable.
-
-# saveRDS(ols_cluster, file = "ols_cluster.rds")
-ols_cluster <- readRDS("ols_cluster.rds")
-tb1 <- tbl_regression(ols_cluster)
+# Specification 1: OLS
+ols <- lm_robust(re_arrest ~ treat + prior_arrests + gender + race + age, data = analysis_data)
+tb1 <- tbl_regression(ols)
 
 # Specification 2: logit
-logit <- glm(re_arrest ~ treat + prior_arrests + gender + race + age, data = case_reg, family = binomial)
+logit <- glm(re_arrest ~ treat + prior_arrests + gender + race + age, data = analysis_data, family = binomial)
 tb2 <- tbl_regression(logit)
 
 # Specification 3: Propensity score matching (weighting)
-pscore_estimate <- glm(treat ~ prior_arrests + gender + race + age, data = case_reg, family = binomial)
+pscore_estimate <- glm(treat ~ prior_arrests + gender + race + age, data = analysis_data, family = binomial)
 pscore <- predict(pscore_estimate, type = "response")
 
-case_reg$pscore <- pscore
+analysis_data$pscore <- pscore
 
-case_reg$weight <- if_else(case_reg$treat == 1, (1 / case_reg$pscore), (1 / (1 - case_reg$pscore)))
-ate <- glm(re_arrest ~ treat, data = case_reg, weights = weight, family = binomial)
-tb3 <- tbl_regression(ate)
+analysis_data$ate_weight <- if_else(analysis_data$treat == 1, (1 / analysis_data$pscore), (1 / (1 - analysis_data$pscore)))
+analysis_data$atet_weight <- if_else(analysis_data$treat == 1, 1, (analysis_data$pscore / (1 - analysis_data$pscore)))
+
+psm_ate <- glm(re_arrest ~ treat, data = analysis_data, weights = ate_weight, family = binomial)
+psm_atet <- glm(re_arrest ~ treat, data = analysis_data, weights = atet_weight, family = binomial)
+tb3 <- tbl_regression(psm_ate)
+tb4 <- tbl_regression(psm_atet)
 
 # Merge regression table
-tbl_merge(list(tb1, tb2, tb3), tab_spanner = c("OLS (clustered S.E.)", "Logit", "Propensity Score (weighting)"))
+tbl_merge(list(tb1, tb2, tb3, tb4), tab_spanner = c("OLS ", "Logit", "Weighted Propensity Score Matching (ATE)", "Weighted Propensity Score Matching (ATET)"))
 ```
 
 ## Conclusion and Discussion

@@ -20,3 +20,7 @@ Stata/src/stata.sty
 data/case.csv
 data/demo.csv
 data/grades.csv
+.Rproj.user
+make.r
+makefile
+R/input
