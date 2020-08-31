@@ -86,8 +86,6 @@ who were arrested in Chicago.
 
 Create an age variable equal to the defendant’s age at the time of arrest for each case.
 
-When constructing GPA, please use a 4 point scale, where: A=4, B=3, C=2, D=1, and F=0.
-
       qui: codebook arrest_date bdate
 
       foreach var of varlist arrest_date bdate{
