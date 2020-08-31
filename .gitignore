@@ -60,3 +60,4 @@ makefile
 ra_stata_sample.pdf
 *.dta
 *.dta
+output/analysis_data.rds
