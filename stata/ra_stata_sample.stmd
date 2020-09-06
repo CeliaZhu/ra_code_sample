@@ -18,8 +18,8 @@ intended to reduce re-arrest among people on bail awaiting trial.
 The program ran through October 2013.
 
 The objective of our analysis is to evaluate the effectiveness of the program.
-We start by cleaning data sets on demographics, cases, and academic performance.
-Next we proceed to provide descriptive statistics for the study population
+We start by cleaning data sets on demographics, arrrests information, and academic performance.
+We proceed to provide descriptive statistics for the study population
 and test their baseline equivalence. The final step is to evaluate whether
 participating in the program reduces the likelihood of re-arrest before disposition.
 
@@ -36,7 +36,7 @@ participating in the program reduces the likelihood of re-arrest before disposit
 
 ## 1. Data Cleaning
 
-### 1.1 Clean demographic Data
+### 1.1 Clean demographic data
 
       import delimited "$data/demo.csv", clear
 
@@ -60,7 +60,7 @@ Save cleaned demographic data
 
       save "$processed/demo_clean.dta", replace
 
-### 1.2 Clean case data
+### 1.2 Clean arrests data (data on arrests is named as case)
 
       import delimited "$data/case.csv", clear
 
@@ -69,6 +69,7 @@ Make sure caseid is uid
       isid caseid
 
 Merge the case and demo datasets together so that each row in the case dataset also contains the demographics of the defendant.
+It's possible to have one person with multiple cases.
 
 Note: No other variables (except person_id) in demo and case sharing the same variable name
 
@@ -81,12 +82,16 @@ arrested in other parts of Cook County.
 For the purpose of this analysis, please restrict the data to only individuals
 who were arrested in Chicago.
 
+I first change all addresses to lower case because it's possible to have "Chicago" inconsistently capitalized as "CHICAGO", "Chicago", or even "chicago".
+
       replace address = lower(address)
       keep if strpos(address, ", chicago") > 0
 
 Create an age variable equal to the defendant’s age at the time of arrest for each case.
 
-      qui: codebook arrest_date bdate
+Glimpse the `arrest_date` and `bdate` to know their formats.
+
+      codebook arrest_date bdate
 
       foreach var of varlist arrest_date bdate{
         gen `var'_dt = date(`var', "YMD")
@@ -97,7 +102,7 @@ Save cleaned case and demographic data
 
       save "$processed/case_demo_clean.dta", replace
 
-### 1.3 Clean grade data for defendants in their early early adulthood (18-24)
+### 1.3 Clean grade data for defendants in their early early adulthood
 
 The State’s Attorney’s Office has requested 9th and 10th grade course
 grade data from defendants between the ages of 18 and 24.
@@ -112,7 +117,7 @@ Import grade data
 Construct 9th and 10th GPA for defendants between the age of 18 and 24
 
       foreach g of varlist gr* {
-        gen byte n_`g' = cond(`g' == "A", 4, ///
+        gen n_`g' = cond(`g' == "A", 4, ///
                     cond(`g' == "B", 3, ///
                     cond(`g' == "C", 2, ///
                     cond(`g' == "D", 1, ///
@@ -126,8 +131,7 @@ Construct 9th and 10th GPA for defendants between the age of 18 and 24
 
 Sanity check on GPAs
 
-      su gpa9
-      su gpa10
+      su gpa*
 
 Keep person id and gpa for grade 9 and 10
 
@@ -148,14 +152,14 @@ The study population should have 25,000 subjects
 
       assert(_N == 25000)
 
-Label variables
+Label variables for cleaner output.
 
       label var age "Age"
       label var prior_arrests "Number of prior arrests"
       label var re_arrest "Re-arrested"
       label var treat "Enrolled into program"
 
-Create dummies for gender and race
+Create dummies for gender and race.
 
       tab gender, m gen(gender_)
       rename gender_1 female
@@ -171,17 +175,20 @@ Create dummies for gender and race
       label var black "Black"
       label var white "White"
 
+Define a local macro for covariates.
+
       local balancevar "female male asian black white prior_arrests age"
 
 ### 2.1 Summary statistics of study population
 
 Describe the demographic characteristics of the study population based on the data available.
-(Hint: the study population has 25,000 subjects).
 
       eststo clear
       qui estpost su `balancevar'
       esttab using "$output/summary_statistics.tex", replace ///
-      cells("mean sd min max") nonumber booktabs
+      cells("mean(fmt(2)) sd(fmt(2)) min(fmt(0 0 0 0 0 0 1)) max(fmt(0 0 0 0 0 1)) count(fmt(0)))") ///
+      collabel("Mean" "Standard Deviation" "Min" "Max Number" of "N") ///
+      width(\textwidth) nonumber booktabs label
 
 \begin{table}[H]
 \centering
@@ -191,25 +198,94 @@ Describe the demographic characteristics of the study population based on the da
 
 ### 2.2 Balance tests for demographic characteristics
 
-The treatment and control groups are not balanced. The average numbers of arrests
+The enrolled and unenrolled groups are not balanced. The average numbers of arrests
 prior to the case arrest date are significantly different in two groups.
-Cases with more prior arrests are more likely to be treated.
+Cases with more prior arrests are more likely to be enrolled into the program.
 The age characteristic is also imbalanced.
-Older cases are more likely to be treated.
+Cases with older defendants are more likely to be enrolled into the program.
 It signals the existence of selection.
 
-Test the baseline equivalence of demographic characteristics
+Test the baseline equivalence of demographic characteristics.
+We use t-test and joint F-test to check both the balance of individual covariates and joint orthognality.
+
+First, we check for balance variable by variable.
 
       balancetable treat `balancevar' using "$output/balance_test.tex", ///
       vce(robust) pval ///
       ctitles("Control group" "Treatment group" "Difference" "P value") ///
       booktabs varlabels replace
 
+
+      tempname `balance_test_t' str21 var mean_0 mean_1 t_stat p_value using ///
+      balance_test, replace
+
+      foreach var of local `balancevar' {
+        qui reg `var' treat, rob
+        local mean_0 = _b[_cons]
+        local mean_1 = _b[_cons] + _b[treat]
+        local t_stat = _b[treat]/_se[treat]
+        local p_value = 2*ttail(e(df_r), abs(`t_stat'))
+
+        post `balance_test_t' ("`var'") (`mean_0') (`t_stat') (`p_value')
+      }
+
+      postclose `balance_test_t'
+
+Now we check for joint orthognality.
+
+      tempname `balance_test_f' f_stat p_value using balance_test_f, replace
+
+      qui reg treat `var', rob
+      testparm `balancevars'
+
+      local f_stat = r(F)
+      local p_value = r(p)
+
+      post `balance_test_t' (`f_stat') (`p_value')
+      postclose `balance_test_f'
+
+The final step of this balance test is to format and export balance tables.
+We label the statistics and coerce the numerical statistics to strings, in order to preserve the two-digits format in the output.
+
+      preserve
+      foreach file in balance_test_t.dta balance_test_f.dta {
+        use `file', clear
+
+        * label statistics
+        cap label var mean_0 "Mean in unenrolled group"
+        cap label var mean_1 "Mean in enrolled group"
+        cap label var t_stat "t-statistic"
+        cap label var f_stat "F-statistic"
+        cap label var p_value "P Value"
+
+        * format numbers
+        cap tostring mean_0 mean_1 t_stat p_value, replace format(%4.2f) force
+        cap tostring f_stat p_value, replace format(%4.2f) force
+
+        * export into latex
+        if "`file'" == "balance_test_t.dta" {
+          tesxave * using "$output/balance_test_t.tex", replace ///
+          varlabels frag location(H)  ///
+          title(Balance test for individual covariates)
+        }
+
+        if "`file'" == "balance_test_f.dta" {
+          texsave * using "$output/balance_test_f.tex", replace ///
+          varlabels frag location(H) ///
+          title(Test joint orthognality of all covariates)
+        }
+      }
+EOD (end of today)
+
 \begin{table}[H]
 \centering
-\caption{Balance test}
+\caption{Balance test for individual covariates}
 \input{/Users/celiazhu/Box/projects/ra_code_sample/output/balance_test.tex}
 \end{table}
+
+\begin{table}[H]
+\centering
+\caption{Balance test for all covariates}
 
 ### 2.3 Visualize number of prior arrests by enrollment status and race
 

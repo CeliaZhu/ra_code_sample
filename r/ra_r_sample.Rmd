@@ -1,0 +1,719 @@
+---
+title: "R Code Sample"
+author: "Xiling Zhu <xiling@uchicago.edu>"
+affiliation: "Harris School of Public Policy, the University of Chicago"
+date: "Aug 28, 2020"
+output: 
+ pdf_document:
+    highlight: default
+    keep_tex: false
+    fig_caption: true
+    latex_engine: xelatex
+fontsize: 11pt
+geometry: margin=1in
+header-includes:
+- \usepackage{dcolumn}
+---
+
+## Background
+
+In January 2012, the Cook County State’s Attorney’s Office established a program intended to reduce re-arrest among people on bail awaiting trial.
+The program ran through October 2013.
+
+The objective of our analysis is to evaluate the effectiveness of the program. We start by cleaning data sets on demographics, cases, and academic performance.
+Next, we provide descriptive statistics for the study population and test their baseline equivalence. The final step is to evaluate whether
+participating in the program reduces the likelihood of re-arrest before disposition.
+
+```{r setup, warning=FALSE, message=FALSE, results='hide', linewidth = 60}
+# Load packages
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+pkg_list <- c(
+  "tidyverse", "stringr", "testthat", "lubridate",
+  "kableExtra", "stargazer", "fastDummies", "lmtest", "sandwich", "AER"
+)
+lapply(pkg_list, require, character.only = TRUE)
+```
+
+
+```{r load data sets}
+# Read in data set of case, demographics, and grades information.
+filelist <- dir("data", pattern = "\\.csv$", full.names = TRUE)
+namelist <- str_match(filelist, "data/(.*?).csv")
+namelist <- namelist[, 2]
+for (i in 1:length(filelist)) {
+  assign(namelist[i], read_csv(filelist[i]))
+}
+```
+
+```{r function for summary statistics (summary_statistics)}
+# Function for summary statistics
+# produce number of observations (obs), and table for mean, sd, min, max (sum_tbl)
+summary_statistics <- function(df, varlist) {
+  obs <- nrow(df)
+
+  sum_tbl <- df %>%
+    select(!!varlist) %>%
+    skimr::skim() %>%
+    select(skim_variable, numeric.mean, numeric.sd, numeric.p0, numeric.p100) %>%
+    left_join(label_tbl, by = c("skim_variable" = "covs")) %>%
+    mutate(
+      numeric.mean = round(numeric.mean, digits = 2),
+      numeric.sd = round(numeric.sd, digits = 2)
+    ) %>%
+    select(-skim_variable) %>%
+    rename(
+      Variable = cov_lab,
+      Mean = numeric.mean,
+      "Standard deviation" = numeric.sd,
+      Min = numeric.p0, Max = numeric.p100
+    ) %>%
+    select(Variable, everything())
+
+  output <- list(obs = obs, sum_tbl = sum_tbl)
+}
+```
+
+```{r function for balance table (balance_table)}
+# Test balance on prior_arrests, age, treat, black, asian, white, male, female.
+# Regress each covariate on treatment variable with robust s.e.
+balance_table <- function(df, varlist, treat_var, weight) {
+  formula <- list()
+  fit <- list() # homoskedastic results stored here
+  ttest <- list() # use robust s.e.
+
+  for (i in 1:length(varlist)) {
+    formula[[i]] <- paste0(varlist[i], " ~", treat_var)
+    if (missing(weight)) {
+      fit[[i]] <- lm(formula[[i]], data = df)
+    } else {
+      fit[[i]] <- lm(formula[[i]], data = df, weights = weight)
+    }
+    # calculate robust s.e.
+    ttest[[i]] <- coeftest(fit[[i]],
+      vcov = vcovHC(fit[[i]], type = "HC1")
+    )
+  }
+
+  # Create a tibble to store statistics in balance test
+  bal_test <- tibble(
+    "var" = character(), "mean0" = numeric(), "mean1" = numeric(),
+    "diff" = numeric(), "se_diff" = numeric(), "df" = numeric(), "p" = numeric()
+  )
+
+  for (i in 1:length(varlist)) {
+    # fill in names of covariates
+    bal_test[i, 1] <- varlist[i]
+    # fill in mean in unenrolled groups = the coefficient of constant term
+    bal_test[i, 2] <- ttest[[i]][1, 1]
+    # fill in mean in enrolled groups
+    # = the coefficient of constant term + coefficient of `treat`
+    bal_test[i, 3] <- ttest[[i]][1, 1] + ttest[[i]][2, 1]
+    # fill in the difference in means = coefficient of `treat`
+    bal_test[i, 4] <- ttest[[i]][2, 1]
+    # fill in the se in the difference
+    bal_test[i, 5] <- ttest[[i]][2, 2]
+    # fill in degree of freedom
+    bal_test[i, 6] <- fit[[i]]$df.residual
+  }
+
+  # Calculate pvalue
+  bal_test <- bal_test %>%
+    mutate(p = 2 * pt(-abs(diff / se_diff), df))
+
+  # Format the balance table
+  bal_tbl <- bal_test %>%
+    # format numbers
+    mutate_if(is.numeric, round, digits = 2) %>%
+    rename(
+      "Mean in unenrolled group" = mean0,
+      "Mean in enrolled group" = mean1,
+      "Difference in means" = diff,
+      "P value" = p
+    ) %>%
+    select(-se_diff, -df)
+
+  output <- bal_tbl
+}
+```
+
+## 1 Data Cleaning
+
+### 1.1 Clean demographic data
+
+The demographic data were extracted from a system that inconsistently coded gender. Recode it so that males are consistently coded as “M” and females are consistently coded as “F”.
+
+```{r clean gender in demo}
+# Inconsistent encoding
+demo %>%
+  filter(gender != "M" & gender != "F") %>%
+  distinct(gender) 
+
+# Clean "male", "female" encoding
+demo_clean <- demo %>%
+  mutate(
+    gender = str_replace(gender, "^male$", "M"),
+    gender = str_replace(gender, "^female$", "F")
+  )
+
+# Test that if there are inconsistent encoding
+test_that(
+  "Gender is consistently coded",
+  expect_equal(
+    0,
+    nrow(demo_clean %>%
+      filter(gender != "M" & gender != "F"))
+  )
+)
+```
+
+### 1.2 Clean case data 
+
+Merge the case and demo datasets together so that each row in the case dataset also contains the demographics of the defendant. Keep in mind that the populations in the case and demo data may not be 100% aligned.
+
+```{r further clean demo to merge with case}
+# person_id is the primary key in this join. Test if they conatin NAs
+test_na <- function(df, x) {
+  test_that(
+    "No missing value in primary key person_id",
+    expect_equal(
+      0,
+      nrow(df %>%
+        filter(is.na(x)))
+    )
+  )
+}
+test_na(demo_clean, "person_id")
+test_na(case, "person_id")
+
+# Check if person_id is the unique identifier in demo_clean
+# test_that(
+#  "person_id is the unique identifier in demo",
+#  expect_equal(
+#    nrow(demo_clean),
+#    nrow(demo_clean %>%
+#           distinct(person_id)
+#  )
+# )
+# )
+
+# The test failed. person_id is not the unique identifier in demo.
+# Extract duplicate person_id and see if they are in the case
+# Remove duplicate rows
+demo_clean <- unique(demo_clean)
+
+# Check how many observations in cases do not have a match in demo
+anti_join(case, demo_clean, by = "person_id") %>%
+  nrow()
+```
+
+```{r Merge demo and case}
+case_demo <- left_join(case, demo_clean, by = "person_id")
+
+# Check that if the numbers of rows before and after join can match
+test_that(
+  "demo and case are merged correctly",
+  expect_equal(
+    nrow(case),
+    nrow(case_demo)
+  )
+)
+```
+
+
+While the program was mostly rolled out to defendants in Chicago, the State’s Attorney’s Office also ran a pilot serving a small number of individuals arrested in other parts of Cook County. For the purpose of this analysis, restrict the data to only individuals who were arrested in Chicago.
+
+```{r restrict to Chicago}
+case_demo_chi <- case_demo %>%
+  filter(endsWith(address, "CHICAGO") |
+    endsWith(address, "Chicago") |
+    endsWith(address, "chicago"))
+```
+
+Create an age variable equal to the defendant’s age at the time of arrest for each case.
+```{r age}
+case_demo_chi <- case_demo_chi %>%
+  mutate(age = round((as_date(arrest_date) - as_date(bdate)) / 365.25, 1)) %>%
+  mutate(age = as.double(age))
+```
+
+### 1.3 Clean grades data
+
+The State’s Attorney is interested in pursuing a partnership with the Chicago Public Schools to investigate the relationship between high school achievement and criminal justice outcomes in early adulthood. To that end, the State’s Attorney’s Office has requested 9th and 10th grade course grade data from defendants between the ages of 18 and 24. These data are included in grades.csv. Please construct measures for 9th and 10th grade GPA for this target population. When constructing GPA, please use a 4 point scale, where: A=4, B=3, C=2, D=1, and F=0.
+
+```{r grades}
+# Calculate GPA
+grades_clean <- grades %>%
+  mutate_at(
+    vars(starts_with("gr")),
+    funs(case_when(
+      . == "A" ~ 4,
+      . == "B" ~ 3,
+      . == "C" ~ 2,
+      . == "D" ~ 1,
+      . == "F" ~ 0
+    ))
+  )
+
+# GPAs for 9th and 10th grades
+for (i in 9:10) {
+  grades_clean[, paste0("gpa", i)] <- rowMeans(
+    select(grades_clean, starts_with(paste0("gr", i))),
+    na.rm = TRUE
+  )
+}
+```
+
+## 2: Statistical Analysis
+
+Help the State’s Attorney’s Office determine if the program should be continued/expanded by estimating the program’s effect on re-arrests prior to disposition. Because we only have grades data for young adults, please do not use these data to inform your statistical analysis. 
+```{r prepare for creating dummies}
+# Check distinct values of race.
+case_demo_chi %>%
+  distinct(race)
+```
+
+
+```{r create analysis data}
+# Create dummies for statistical analysis
+analysis_data <- case_demo_chi %>%
+  dummy_cols(select_columns = c("race", "gender")) %>%
+  rename(
+    asian = race_ASIAN, black = race_BLACK, white = race_WHITE,
+    female = gender_F, male = gender_M
+  )
+
+# Check that the study population has 25,000 subjects.
+test_that(
+  "The study population has 25,000 subjects",
+  expect_equal(
+    25000,
+    nrow(analysis_data)
+  )
+)
+
+# From now on I will use analysis_data for statistical analysis.
+# Save the cleaned data.
+saveRDS(analysis_data, "output/analysis_data.rds")
+```
+
+### 2.1 Summary statistics of study population
+
+```{r summary statistics}
+# Create a crosswalk for covarates and its labels
+covs <-
+  c("asian", "black", "white", "male", "female", "prior_arrests", "age")
+cov_lab <-
+  c("Asian", "Black", "White", "Male", "Female", "Number of prior arrests", "Age")
+label_tbl <- tibble(covs, cov_lab)
+
+# Use the function `summary_statistics()` to get summary table
+summary_list <- summary_statistics(analysis_data, covs)
+summary_tbl <- summary_list$sum_tbl
+n <- summary_list$obs
+
+# Exhibit latex output
+kbl(summary_tbl, "latex",
+  caption = "Summary Statistics",
+  booktabs = TRUE,
+  align = "l"
+) %>%
+  kable_styling(
+    latex_options = "hold_position",
+    full_width = TRUE
+  ) %>%
+  footnote(
+    general = paste(n, "Observations", sep = " "),
+    footnote_as_chunk = TRUE
+  )
+
+# Save Latex output
+kbl(summary_tbl, "latex",
+  caption = "Summary Statistics",
+  booktabs = TRUE,
+  align = "l"
+) %>%
+  kable_styling(
+    latex_options = "hold_position",
+    full_width = TRUE
+  ) %>%
+  footnote(
+    general = paste(n, "Observations", sep = " "),
+    footnote_as_chunk = TRUE
+  ) %>%
+  save_kable("output/summary_table.tex",
+    latex_header_includes = FALSE,
+    keep_tex = TRUE
+  )
+```
+
+### 2.2 Balance tests for demographic characteristics
+
+The treatment and control groups are not balanced. The average numbers of arrests prior to the case arrest date are significantly different in two groups. Cases with more prior arrests are more likely to be treated. The age characteristic is also imbalanced. Older cases are more likely to be treated. It signals the problem of selection.
+    
+```{r baseline equivalence}
+# Test balance on prior_arrests, age, treat, black, asian, white, male, female.
+# Use function balance_table() for balance test of individual orthogonality
+bal_tbl <- balance_table(analysis_data, covs, "treat") %>%
+  # Format the variable names
+  left_join(label_tbl, by = c("var" = "covs")) %>%
+  select(-var) %>%
+  rename(Variable = cov_lab) %>%
+  select(Variable, everything())
+
+# F-test for joint orthogonality
+# Check perfect collinearity
+alias(
+  lm(treat ~ black + asian + white + male + female + prior_arrests + age,
+    data = analysis_data
+  )
+)
+# use female and asian as base group
+f_fit <- lm(
+  treat ~ black + white + male + prior_arrests + age,
+  data = analysis_data
+)
+ftest <- linearHypothesis(
+  f_fit,
+  c("black = 0", "white = 0", "male = 0", "prior_arrests = 0", "age = 0"),
+  white.adjust = "hc1"
+) %>%
+  filter(!is.na(Df)) %>%
+  select(F, "Pr(>F)")
+
+ftest_pvalue <- format(round(ftest$`Pr(>F)`, digits = 3), nsmall = 2)
+
+# Assemble balance table (add F-test in balance table)
+# Latex output
+kbl(bal_tbl, "latex", caption = "Balance Test", booktabs = TRUE, align = "l") %>%
+  kable_styling(latex_options = "hold_position", full_width = TRUE) %>%
+  footnote(
+    general = paste("F-test of joint orthogonality (P value)",
+      ftest_pvalue,
+      sep = " "
+    ),
+    footnote_as_chunk = TRUE
+  )
+
+# Save latex output
+kbl(bal_tbl, "latex", caption = "Balance Test", booktabs = TRUE, align = "l") %>%
+  kable_styling(latex_options = "hold_position", full_width = TRUE) %>%
+  footnote(
+    general = paste("F-test of joint orthogonality (P value)",
+      ftest_pvalue,
+      sep = " "
+    ),
+    footnote_as_chunk = TRUE
+  ) %>%
+  save_kable(
+    "output/balance_table.tex",
+    latex_header_includes = FALSE,
+    keep_tex = TRUE
+  )
+```
+
+
+### 2.3 Visualize number of prior arrests by enrollment status and race
+
+```{r plot, fig.align="center"}
+# Define filling color
+fill_pal <- c("#800000E6", "#800000B3", "#80000080")
+
+# Calculate mean and confidence interval
+analysis_data %>%
+  group_by(treat, race) %>%
+  summarise(
+    avg_arrests = mean(prior_arrests),
+    sd = sd(prior_arrests),
+    n = n()
+  ) %>%
+  mutate(ci = 1.96 * (sd / sqrt(n))) %>%
+  ungroup() %>%
+  mutate(
+    plot_id = c(1, 2, 3, 5, 6, 7),
+    fill_pal = rep(c("#800000E6", "#800000B3", "#80000080"), times = 2)
+  ) %>%
+  # Plot bar graph with error bar
+  ggplot() +
+  geom_col(
+    aes(x = plot_id, y = avg_arrests, fill = race),
+    position = "dodge"
+  ) +
+  scale_fill_manual(
+    values = fill_pal, name = "Race",
+    labels = c("Asian", "Black", "White")
+  ) +
+  geom_errorbar(
+    aes(x = plot_id, ymin = avg_arrests - ci, ymax = avg_arrests + ci),
+    width = 0.2, color = "#666666", alpha = 0.9, size = 1
+  ) +
+  scale_x_continuous(breaks = c(2, 6), label = c("Unenrolled", "Enrolled")) +
+  labs(
+    x = "Enrollment status",
+    y = "Average number of prior arrests",
+    title = "Number of prior arrests imbalanced between enrolled and unenrolled group",
+    subtitle = "Average number of prior arrests and 95% confidence interval by race and enrollment status",
+    caption = "Source: Cook County State's Attorney's Office"
+  ) +
+  theme(
+    plot.title = element_text(size = 11, face = "bold"),
+    plot.subtitle = element_text(size = 9),
+    panel.background = element_rect(
+      fill = "white", colour = "white",
+      size = 0.5, linetype = "solid"
+    ),
+    panel.grid.major.y = element_line(
+      size = 0.1, linetype = "solid",
+      colour = "grey"
+    ),
+    panel.grid.minor = element_blank()
+  )
+
+# Save plot
+ggsave("output/barplot.png")
+```
+
+
+### 2.4 Estimate the effect of the program on reducing the likelihood of re-arrest before disposition
+
+One difficulty in estimating the effect of the program is that I don't have enough information about the implementation of the program: if program was an randomized controlled trial and how was the compliance, or if it was an observational study.
+
+**1. OLS (or Linear Probability Model)**
+
+We start with the OLS model.
+    
+$$
+		rearrest_{ic} = \tau treat_{ic} + \beta X_{ic} + \beta_4 age_{ic} + \epsilon_{ic}
+$$
+    
+where $i$ is the individual,  $c$ is the case, $X_{ic}$ is the vector for race, gender, age, and number of prior arrests. 
+
+It can correctly estimate the treatment effect given that 1) there is no selection on unobservables and we've controlled all observables that could be selected upon; and 2) how people are self-selected based on those variables can be approximated by a linear function. But these assumptions are unlikely to be true. 
+    
+If the program was a randomized trial, the treatment was administered on the case level, not on the individual level. Hence, we don't cluter standard errors here.
+
+Also, by examining the unique values of `person_id`, we can conclude that for most defendants, they only have one or two cases. Indiviudal fixed effects is not desirable here.
+
+```{r ols}
+# Specification 1: OLS
+# female and asian as base group
+ols <- lm(
+  re_arrest ~ treat + prior_arrests + male + black + white + age,
+  data = analysis_data
+)
+ols$rse <- sqrt(diag(vcovHC(ols, type = "HC1")))
+```
+
+
+**2. Logit Model**
+
+Assume the program was not an experiment, we can improve our **prediction** on the likelihood by using a logit model instead of a linear probability model, which was implemented in specification 1. But the results given by logit specification is for prediction, not for causal inference.
+    
+$$
+  Pr(rearrest = 1 | X_c) = \frac{exp^{X_c'\beta}}{1 + e^{X_c'\beta}}
+$$
+
+where $X_c$ are prior arrests, gender, race, and age of the case $c$. In the logit model the treatment significantly reduces the likelihood of rearrest.
+
+```{r logit}
+# Specification 2: logit
+# female and asian as base group
+logit <- glm(
+  re_arrest ~ treat + prior_arrests + male + black + white + age,
+  data = analysis_data,
+  family = binomial
+)
+```
+
+**3. Weighted Propensity Score Matching (Inverse Probability Weighting)**
+
+To estimate the causal effect of this treatment given that the program was **observational**, not experimental, we need to assume that there is no selection on unobservables and we've controlled all observables that could be selected upon. But we can relax the assumption on the functional form.
+
+Still, the estimate based upon propensity score matching is not entirely valid, because we omit variables such as grades, household income, etc..
+
+However, this is less restrictive and therefore more plausible than the OLS estimate.
+
+```{r ipw--get propensity score and inverse probability weight}
+# Specification 2: Propensity score matching (weighting)
+
+# Get propensity score
+# female and asian be base group
+pscore_estimate <- glm(treat ~ prior_arrests + male + black + white + age + age^2,
+  data = analysis_data,
+  family = binomial
+)
+pscore <- predict(pscore_estimate, type = "response")
+analysis_data$pscore <- pscore
+
+# Inverse probability (average treatment effect)
+analysis_data$ate_weight <- if_else(analysis_data$treat == 1,
+  (1 / analysis_data$pscore),
+  (1 / (1 - analysis_data$pscore))
+)
+
+# Common support
+pscore_min <- analysis_data %>%
+  filter(treat == 1) %>%
+  summarise(min = min(pscore))
+pscore_min <- pscore_min$min
+
+pscore_max <- analysis_data %>%
+  filter(treat == 0) %>%
+  summarise(max = max(pscore))
+pscore_max <- pscore_max$max
+
+analysis_data_cs <- analysis_data %>%
+  filter(pscore >= pscore_min & pscore <= pscore_max)
+```
+
+```{r plot2, fig.align="center"}
+# Facet label names
+treat.labs <- c("Unenrolled", "Enrolled")
+names(treat.labs) <- c("0", "1")
+
+# Plot faceted histogram
+ggplot(data = analysis_data, aes(x = pscore)) +
+  geom_histogram(binwidth = 0.05, fill = "#800000B3") +
+  facet_grid(rows = vars(treat), labeller = labeller(treat = treat.labs)) +
+  labs(
+    x = "Propensity score",
+    y = "Frequency",
+    title = "Histogram of Propensity Scores by Enrollemnt Status"
+  ) +
+  theme(
+    plot.title = element_text(size = 11, face = "bold"),
+    plot.subtitle = element_text(size = 9),
+    panel.background = element_rect(
+      fill = "white", colour = "white",
+      size = 0.5, linetype = "solid"
+    ),
+    panel.grid.major.y = element_line(
+      size = 0.1, linetype = "solid",
+      colour = "grey"
+    ),
+    panel.grid.minor = element_blank()
+  )
+```
+
+
+```{r ipw--assess validity of propensity score (summary statistics)}
+# Use the function `summary_statistics` to get summary table
+summary_list_cs <- summary_statistics(analysis_data_cs, covs)
+summary_tbl_cs <- summary_list_cs$sum_tbl
+n_cs <- summary_list_cs$obs
+
+# Exhibit output
+kbl(summary_tbl_cs,
+  caption = "Summary Statistics (observations within common support)",
+  booktabs = TRUE, align = "l"
+) %>%
+  kable_styling(latex_options = "hold_position", full_width = TRUE) %>%
+  footnote(
+    general = paste("Number of observations: ", n_cs),
+    footnote_as_chunk = TRUE
+  )
+
+# Save Latex output
+kbl(summary_tbl, "latex",
+  caption = "Summary Statistics (observations within common support)",
+  booktabs = TRUE, align = "l"
+) %>%
+  kable_styling(latex_options = "hold_position", full_width = TRUE) %>%
+  footnote(
+    general = paste("Number of observations: ", n_cs),
+    footnote_as_chunk = TRUE
+  ) %>%
+  save_kable("output/summary_table_cs.tex",
+    latex_header_includes = FALSE,
+    keep_tex = TRUE
+  )
+```
+
+```{r ipw--assess validity of propensity score (balance)}
+# 3) balance tests with weights, using data within common support----
+# Use function balance_table() for balance test of individual orthogonality
+weight <- analysis_data_cs$ate_weight
+bal_tbl_ipw <- balance_table(analysis_data_cs, covs, "treat", weight) %>%
+  # Format the variable names
+  left_join(label_tbl, by = c("var" = "covs")) %>%
+  select(-var) %>%
+  rename(Variable = cov_lab) %>%
+  select(Variable, everything())
+
+# F-test for joint orthogonality
+# use female and asian as base group
+f_fit_ipw <- lm(treat ~ black + white + male + prior_arrests + age,
+  weights = ate_weight,
+  data = analysis_data_cs
+)
+ftest_ipw <- linearHypothesis(f_fit_ipw,
+  c("black = 0", "white = 0", "male = 0", "prior_arrests = 0", "age = 0"),
+  white.adjust = "hc1"
+) %>%
+  filter(!is.na(Df)) %>%
+  select(F, "Pr(>F)")
+
+ftest_pvalue_ipw <- format(round(ftest_ipw$`Pr(>F)`, digits = 3), nsmall = 2)
+
+# Assemble balance table
+# Exhibit latex output
+kbl(bal_tbl_ipw, "latex",
+  caption = "Balance Test Weighted by Inverse Probability",
+  booktabs = TRUE, align = "l"
+) %>%
+  kable_styling(latex_options = "hold_position", full_width = TRUE) %>%
+  footnote(
+    general = paste("F-test of joint orthogonality (P value): ", ftest_pvalue_ipw),
+    footnote_as_chunk = TRUE
+  )
+
+# Save latex output
+kbl(bal_tbl_ipw, "latex",
+  caption = "Balance Test Weighted by Inverse Probability",
+  booktabs = TRUE
+) %>%
+  kable_styling(latex_options = "hold_position", full_width = TRUE) %>%
+  footnote(
+    general = paste("F-test of joint orthogonality (P value): ", ftest_pvalue_ipw),
+    footnote_as_chunk = TRUE
+  ) %>%
+  save_kable("output/balance_table_ipw.tex",
+    latex_header_includes = FALSE, keep_tex = TRUE
+  )
+```
+
+```{r ipw--estimate}
+psm_ate <- glm(re_arrest ~ treat,
+  data = analysis_data_cs,
+  weights = ate_weight,
+  family = binomial
+)
+```
+
+```{r export regression results, results='asis'}
+stargazer(ols, logit, psm_ate,
+  se = list(ols$rse, NULL, NULL),
+  title = "Estimation Results", align = TRUE,
+  dep.var.labels = rep("Rearrested before disposition", 2),
+  covariate.labels = c(
+    "Enrolled into program", "Number of prior arrests",
+    "Male", "Black", "White", "Age", "Constant"
+  ),
+  model.numbers = FALSE,
+  model.names = FALSE,
+  keep.stat = "n",
+  multicolumn = TRUE,
+  column.labels = c("OLS", "Logit", "IPW"),
+  type = "latex",
+  header = FALSE,
+  float = TRUE,
+  table.placement = "H",
+  notes.align = "l",
+  out = "output/reg_results.tex"
+)
+```
+
+## Conclusion and Discussion
+
+Overall, the treatment significantly reduces the likelihood of re-arrest before disposition. With the information we have, we can conclude that the program is effective and should be expanded or continued, or should be furthered examined with an experiment.
+
+However, please note that the causal inference has much room for improvement. It would have better performance if we can obtain more relevant variables. For example, their grades, household income, neighboorhoods.

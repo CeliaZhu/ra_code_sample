@@ -1,0 +1,29 @@
+{smcl}
+{com}{sf}{ul off}{txt}{.-}
+      name:  {res}<unnamed>
+       {txt}log:  {res}/Users/celiazhu/Box/projects/ra_code_sample/stata/ra_stata_sample.smcl
+  {txt}log type:  {res}smcl
+ {txt}opened on:  {res} 5 Sep 2020, 11:50:25
+{txt}
+{com}. //_1
+.   clear all
+{res}{txt}
+{com}.   set more off
+{txt}
+{com}.   set varabbrev off
+{txt}
+{com}. //_2
+.   global data /Users/celiazhu/Box/projects/ra_code_sample/data
+{txt}
+{com}.   global output /Users/celiazhu/Box/projects/ra_code_sample/output
+{txt}
+{com}.   global processed /Users/celiazhu/Box/projects/ra_code_sample/processed
+{txt}
+{com}. //_3
+.   import delimited "$data/demo.csv", clear
+{res}{err}file /Users/celiazhu/Box/projects/ra_code_sample/data/demo.csv not found
+{txt}{search r(601), local:r(601);}
+
+end of do-file
+
+{com}. 

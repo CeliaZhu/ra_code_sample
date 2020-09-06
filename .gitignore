@@ -1,9 +1,10 @@
 *.png
 *.tex
 *.dta
-*.pdf
 *.csv
 *.rds
+*.pdf
+*.log
 .Rproj.user/9E18C7F8/pcs/files-pane.pper
 .Rproj.user/9E18C7F8/pcs/source-pane.pper
 .Rproj.user/9E18C7F8/pcs/windowlayoutstate.pper
