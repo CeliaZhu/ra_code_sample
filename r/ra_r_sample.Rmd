@@ -11,7 +11,7 @@ header-includes:
 - \renewcommand{\efloatseparator}{\bigskip}
 - \usepackage{etoolbox}
 ---
-[^1]: Written by `Rmarkdown`. For source code, please see my github repository [here](https://github.com/CeliaZhu/ra_code_sample/)
+[^1]: Written by `Rmarkdown`. For source code, please see my github repository [here](https://github.com/CeliaZhu/ra_code_sample/blob/master/r/ra_r_sample.Rmd)
 
 # Background
 
