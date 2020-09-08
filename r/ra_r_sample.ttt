@@ -1,0 +1,127 @@
+\begin{table}[!h]
+
+\caption{\label{tab:summary-statistics}Summary Statistics}
+\centering
+\begin{tabu} to \linewidth {>{\raggedright}X>{\raggedright}X>{\raggedright}X>{\raggedright}X>{\raggedright}X>{\raggedright}X}
+\toprule
+Variable & N & Mean & Standard deviation & Min & Max\\
+\midrule
+Asian & 25000 & 0.05 & 0.22 & 0.0 & 1.0\\
+Black & 25000 & 0.73 & 0.44 & 0.0 & 1.0\\
+White & 25000 & 0.22 & 0.41 & 0.0 & 1.0\\
+Male & 25000 & 0.80 & 0.40 & 0.0 & 1.0\\
+Female & 25000 & 0.20 & 0.40 & 0.0 & 1.0\\
+\addlinespace
+Number of prior arrests & 25000 & 3.80 & 2.14 & 0.0 & 16.0\\
+Age & 25000 & 30.34 & 7.80 & 9.5 & 70.1\\
+\bottomrule
+\end{tabu}
+\end{table}
+\efloatseparator
+ 
+\begin{table}[!h]
+
+\caption{\label{tab:baseline}Balance Test}
+\centering
+\begin{tabu} to \linewidth {>{\raggedright}X>{\raggedright}X>{\raggedright}X>{\raggedright}X>{\raggedright}X}
+\toprule
+Variable & Mean in unenrolled group & Mean in enrolled group & Difference in means & P value\\
+\midrule
+Asian & 0.05 & 0.05 & 0.00 & 0.51\\
+Black & 0.73 & 0.73 & 0.00 & 0.45\\
+White & 0.22 & 0.22 & -0.01 & 0.24\\
+Male & 0.80 & 0.80 & 0.00 & 0.34\\
+Female & 0.20 & 0.20 & 0.00 & 0.34\\
+\addlinespace
+Number of prior arrests & 3.15 & 4.38 & 1.23 & 0.00\\
+Age & 28.73 & 31.79 & 3.07 & 0.00\\
+\bottomrule
+\multicolumn{5}{l}{\rule{0pt}{1em}\textit{Note: } F-test of joint orthogonality (P value) 0.00}\\
+\end{tabu}
+\end{table}
+\efloatseparator
+ 
+\begin{table}[!h]
+
+\caption{\label{tab:summary-statistics-cs}Summary Statistics (observations within common support)}
+\centering
+\begin{tabu} to \linewidth {>{\raggedright}X>{\raggedright}X>{\raggedright}X>{\raggedright}X>{\raggedright}X>{\raggedright}X}
+\toprule
+Variable & N & Mean & Standard deviation & Min & Max\\
+\midrule
+Asian & 24980 & 0.05 & 0.22 & 0.0 & 1.0\\
+Black & 24980 & 0.73 & 0.44 & 0.0 & 1.0\\
+White & 24980 & 0.22 & 0.41 & 0.0 & 1.0\\
+Male & 24980 & 0.80 & 0.40 & 0.0 & 1.0\\
+Female & 24980 & 0.20 & 0.40 & 0.0 & 1.0\\
+\addlinespace
+Number of prior arrests & 24980 & 3.79 & 2.12 & 0.0 & 12.0\\
+Age & 24980 & 30.33 & 7.78 & 9.5 & 70.1\\
+\bottomrule
+\end{tabu}
+\end{table}
+\efloatseparator
+ 
+\begin{table}[!h]
+
+\caption{\label{tab:balance-table-ipw}Balance Test Weighted by Inverse Probability for ATE}
+\centering
+\begin{tabu} to \linewidth {>{\raggedright}X>{\raggedright}X>{\raggedright}X>{\raggedright}X>{\raggedright}X}
+\toprule
+Variable & Mean in unenrolled group & Mean in enrolled group & Difference in means & P value\\
+\midrule
+Asian & 0.05 & 0.05 & 0.00 & 0.90\\
+Black & 0.73 & 0.73 & 0.00 & 0.98\\
+White & 0.22 & 0.22 & 0.00 & 0.93\\
+Male & 0.80 & 0.80 & 0.00 & 0.91\\
+Female & 0.20 & 0.20 & 0.00 & 0.91\\
+\addlinespace
+Number of prior arrests & 3.80 & 3.79 & -0.01 & 0.78\\
+Age & 30.39 & 30.33 & -0.06 & 0.63\\
+\bottomrule
+\multicolumn{5}{l}{\rule{0pt}{1em}\textit{Note: } F-test of joint orthogonality (P value):  0.998}\\
+\end{tabu}
+\end{table}
+\efloatseparator
+ 
+\begin{table}[h] \centering
+  \caption{Estimation Results}
+  \label{tab:regression-results}
+\begin{tabular}{@{\hspace{10pt}}l@{\hspace{10pt}}D{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} }
+\toprule
+ & \multicolumn{4}{c}{\textit{Dependent variable:}} \\
+\cmidrule(rr){2-5}
+ & \multicolumn{4}{c}{Rearrested before disposition} \\
+ \cmidrule(rr){2-5}
+ & \multicolumn{1}{c}{OLS} & \multicolumn{1}{c}{Logit} & \multicolumn{1}{c}{IPW (ATE)} & \multicolumn{1}{c}{IPW(ATET)} \\
+\midrule
+\\[-2.1ex] Enrolled into program & -0.015^{***} & -0.015^{***} & -0.017^{***} & -0.017^{***} \\
+  & (0.005) & (0.005) & (0.005) & (0.005) \\
+ \addlinespace
+ Number of prior arrests & 0.016^{***} & 0.015^{***} &  &  \\
+  & (0.002) & (0.001) &  &  \\
+ \addlinespace
+ Male & 0.005 & 0.005 &  &  \\
+  & (0.006) & (0.006) &  &  \\
+ \addlinespace
+ Black & 0.006 & 0.005 &  &  \\
+  & (0.012) & (0.012) &  &  \\
+ \addlinespace
+ White & 0.003 & 0.003 &  &  \\
+  & (0.013) & (0.013) &  &  \\
+ \addlinespace
+ Age & 0.004^{***} & 0.004^{***} &  &  \\
+  & (0.0005) & (0.0004) &  &  \\
+ \addlinespace
+ Constant & 0.035^{**} &  & 0.219^{***} & 0.234^{***} \\
+  & (0.016) &  & (0.004) & (0.004) \\
+ \addlinespace
+\midrule
+Observations & \multicolumn{1}{c}{25,000} & \multicolumn{1}{c}{25,000} & \multicolumn{1}{c}{24,980} & \multicolumn{1}{c}{24,980} \\
+\bottomrule
+\textit{Note:}  & \multicolumn{4}{l}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\
+ & \multicolumn{4}{l}{Marginal effects reported in logit model;} \\
+ & \multicolumn{4}{l}{Robust s.e. reported in OLS model, clustered robust s.e.reported} \\
+ & \multicolumn{4}{l}{in logit model} \\
+\end{tabular}
+\end{table}
