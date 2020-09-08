@@ -844,7 +844,7 @@ stargazer(ols, logit$fit, ipw_ate, ipw_atet,
 )
 ```
 
-## Conclusion and Discussion
+## Conclusion
 
 Overall, the treatment significantly reduces the likelihood of re-arrest before disposition. With the information we have, we can conclude that the program is effective and should be expanded or continued, or should be furthered examined with an experiment.
 

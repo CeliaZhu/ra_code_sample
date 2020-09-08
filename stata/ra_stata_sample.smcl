@@ -3,7 +3,7 @@
       name:  {res}<unnamed>
        {txt}log:  {res}/Users/celiazhu/Box/projects/ra_code_sample/stata/ra_stata_sample.smcl
   {txt}log type:  {res}smcl
- {txt}opened on:  {res} 7 Sep 2020, 19:15:16
+ {txt}opened on:  {res} 7 Sep 2020, 19:22:19
 {txt}
 {com}. //_1
 . clear all
@@ -552,7 +552,7 @@ Iteration 3:{space 3}log pseudolikelihood = {res:-12618.548}
       {txt}name:  {res}<unnamed>
        {txt}log:  {res}/Users/celiazhu/Box/projects/ra_code_sample/stata/ra_stata_sample.smcl
   {txt}log type:  {res}smcl
- {txt}closed on:  {res} 7 Sep 2020, 19:15:46
+ {txt}closed on:  {res} 7 Sep 2020, 19:22:45
 {txt}{.-}
 {smcl}
 {txt}{sf}{ul off}
