@@ -3,11 +3,7 @@ title: Stata Code Sample [^1]
 author: Xiling (Celia) Zhu <xiling@uchicago.edu>
 date: Aug 28, 2020
 header-includes:
-  - \usepackage{multicol}
-  - \usepackage{tabularx}
-  - \usepackage{lscape}
-  - \usepackage{graphicx}
-  - \usepackage{float}
+  - \usepackage{multicol, graphicx, float}
 ---
 
 ## Background
