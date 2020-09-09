@@ -435,10 +435,10 @@ graph export "$output/ps_hist.png", replace
 \includegraphics[width = \textwidth]{/Users/celiazhu/Box/projects/ra_code_sample/stata/output/ps_hist.png}
 \end{figure}
 
-2) Summary statistics of observations within common support
+2) Summary statistics of observations within common support, weighted by inverse probability for ATE
 ```{s}
 eststo clear
-qui estpost su `balancevar' if support == 1
+qui estpost su `balancevar' if support == 1 [aw = ate_weight]
 esttab using "$output/summary_statistics_cs.tex", replace ///
 cells("count(fmt(0)) mean(fmt(2)) sd(fmt(2)) min(fmt(0 0 0 0 0 0 1)) max(fmt(0 0 0 0 0 0 1))") ///
 collabel("N" "Mean" "Standard Deviation" "Min" "Max" ) ///
@@ -446,7 +446,7 @@ width(\textwidth) nonumber  label
 ```
 \begin{table}[H]
 \centering
-\caption{Summary statistics for observations within common support}
+\caption{Summary statistics for observations within common support, weighted by inverse probability for ATE}
 \input{/Users/celiazhu/Box/projects/ra_code_sample/stata/output/summary_statistics_cs.tex}
 \end{table}
 
@@ -502,8 +502,13 @@ Overall, the treatment significantly reduces the likelihood of re-arrest before 
 With the information we have from the pilot study, we can conclude that the program is
 effective and should be furthered examined with an experiment.
 
-However, please note that the causal inference has much room for improvement. It
-would have better performance if we can obtain more characteristics. To name a few,
-household income, and the neighborhoods defendants live in; and for younger defendants,
+However, please note that the causal inference has much room for improvement.
+Though the sample on the common support and weighted by the inverse probability
+for ATE is balanced, the distribution of propensity score is not ideal. Some cases
+not selected into the program still have relatively high propensity score. And the
+distribution didn't improve much when I added higher-ordered terms, like age squared.
+
+The causal inference would have better performance if we can obtain more characteristics.
+To name a few, household income, and the neighborhoods defendants live in; and for younger defendants,
 we can also incorporate their academic performance and disciplinary incidents in school,
 and the school districts they live in.

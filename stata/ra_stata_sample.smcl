@@ -3,7 +3,7 @@
       name:  {res}<unnamed>
        {txt}log:  {res}/Users/celiazhu/Box/projects/ra_code_sample/stata/ra_stata_sample.smcl
   {txt}log type:  {res}smcl
- {txt}opened on:  {res} 7 Sep 2020, 22:48:18
+ {txt}opened on:  {res} 9 Sep 2020, 12:31:49
 {txt}
 {com}. //_1
 . clear all
@@ -479,7 +479,7 @@
 {com}. //_14
 . eststo clear
 {txt}
-{com}. qui estpost su `balancevar' if support == 1
+{com}. qui estpost su `balancevar' if support == 1 [aw = ate_weight]
 {txt}
 {com}. esttab using "$output/summary_statistics_cs.tex", replace ///
 > cells("count(fmt(0)) mean(fmt(2)) sd(fmt(2)) min(fmt(0 0 0 0 0 0 1)) max(fmt(0 0 0 0 0 0 1))") ///
@@ -552,7 +552,7 @@ Iteration 3:{space 3}log pseudolikelihood = {res:-12618.548}
       {txt}name:  {res}<unnamed>
        {txt}log:  {res}/Users/celiazhu/Box/projects/ra_code_sample/stata/ra_stata_sample.smcl
   {txt}log type:  {res}smcl
- {txt}closed on:  {res} 7 Sep 2020, 22:48:47
+ {txt}closed on:  {res} 9 Sep 2020, 12:32:17
 {txt}{.-}
 {smcl}
 {txt}{sf}{ul off}
