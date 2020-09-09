@@ -3,7 +3,7 @@
       name:  {res}<unnamed>
        {txt}log:  {res}/Users/celiazhu/Box/projects/ra_code_sample/stata/ra_stata_sample.smcl
   {txt}log type:  {res}smcl
- {txt}opened on:  {res} 9 Sep 2020, 12:31:49
+ {txt}opened on:  {res} 9 Sep 2020, 12:45:49
 {txt}
 {com}. //_1
 . clear all
@@ -544,7 +544,7 @@ Iteration 3:{space 3}log pseudolikelihood = {res:-12618.548}
 > addnotes("Model 1: OLS; Model 2: Logit; Model 3: IPW (ATE); Model 4: IPW (ATET)" ///
 > "Odds ratio reported in logit model" ///
 > "Robust s.e. reported in OLS model; clustered robust s.e. reported in logit model") ///
-> eform(0 1 0 0 ) replace
+> eform(0 1 0 0 ) replace eqlabels(none)
 {res}{txt}(output written to {browse  `"/Users/celiazhu/Box/projects/ra_code_sample/stata/output/estimation.tex"'})
 
 {com}. //_^
@@ -552,7 +552,7 @@ Iteration 3:{space 3}log pseudolikelihood = {res:-12618.548}
       {txt}name:  {res}<unnamed>
        {txt}log:  {res}/Users/celiazhu/Box/projects/ra_code_sample/stata/ra_stata_sample.smcl
   {txt}log type:  {res}smcl
- {txt}closed on:  {res} 9 Sep 2020, 12:32:17
+ {txt}closed on:  {res} 9 Sep 2020, 12:46:17
 {txt}{.-}
 {smcl}
 {txt}{sf}{ul off}

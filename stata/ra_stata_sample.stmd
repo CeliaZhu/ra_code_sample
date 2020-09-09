@@ -488,7 +488,7 @@ esttab using "$output/estimation.tex", se  label nobaselevels noomitted ///
 addnotes("Model 1: OLS; Model 2: Logit; Model 3: IPW (ATE); Model 4: IPW (ATET)" ///
 "Odds ratio reported in logit model" ///
 "Robust s.e. reported in OLS model; clustered robust s.e. reported in logit model") ///
-eform(0 1 0 0 ) replace
+eform(0 1 0 0 ) replace eqlabels(none)
 ```
 
 \begin{table}[H]
