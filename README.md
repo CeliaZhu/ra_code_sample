@@ -1,5 +1,5 @@
 ## Code Samples for Research Assistantship 
-Welcome! This is a repository for my code samples used in research assistatnship applications. 
+Welcome! This is a repository for my code samples used in research assistantship applications.  
 
 In the master branch, for an easier review, I wrote "monolithic" code samples using the literate programming tools `markstat` (in the "Stata" folder, with a PDF output) and `R markdown` (in the "R" folder, with a PDF output).
 
