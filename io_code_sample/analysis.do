@@ -75,7 +75,10 @@ foreach var of varlist ma loc brand model cla frm {
 }
 
 * label needed variables
-label var hp "Horsepower (in kW)"
+label var hp "Horsepower (kW)"
+label var li "Fuel consumption (liter per km)"
+label var eurpr "Price in common currency"
+
 * store cleaned data
 save "$data/clean_data/all_data.dta", replace
 /*-----------------End of SECTION 1: Data Cleaning --------------*/
@@ -199,8 +202,7 @@ texsave using "$table/`file_name'.tex", replace frag nonames `headerlines' `mark
 /*-----------------End of SECTION 2: Data Exploration --------------*/
 
 /**********************************************************************/
-/*  SECTION 3: Estimation and Causal Inference
-    Notes: */
+/*  SECTION 3: Estimation and Causal Inference  */
 /**********************************************************************/
 use "$data/clean_data/all_data.dta", clear
 
@@ -221,9 +223,18 @@ label var share_no_cars "Share of consumers who buy no cars"
 gen outcome = ln(share) - ln(share_no_cars)
 label var outcome "Outcome"
 
-save "$data/clean_data/dec22.dta", replace
+* Regress outcome variable on a constant, fuel consumption, and price
+eststo clear
+eststo: qui reg outcome li eurpr, r
+estadd local fe "None"
+
+* Including car model, market, and year fixed effects
+eststo: qui reg outcome li eurpr i.ma_code i.model_code i.ye, r
+estadd local fe "car model, market, and year"
+
+esttab using "$table/linear.tex", replace se drop(*.ma_code *.model_code *.ye) ///
+booktabs width(\textwidth) label scalars("fe Fixed effects")
 /*-----------------End of SECTION 3: Estimation and Causal Inference --------------*/
 
-
 log close
-* End of file
+* EOF
