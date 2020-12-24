@@ -1,0 +1,13 @@
+{smcl}
+{com}{sf}{ul off}{txt}{.-}
+      name:  {res}<unnamed>
+       {txt}log:  {res}/Users/celiazhu/Box/projects/ra_code_sample/io_code_sample/code_sample.smcl
+  {txt}log type:  {res}smcl
+ {txt}opened on:  {res}23 Dec 2020, 23:00:30
+{txt}
+{com}. //_1
+. clear all
+{res}{txt}
+{com}. cap log close
+{smcl}
+{com}{sf}{ul off}
