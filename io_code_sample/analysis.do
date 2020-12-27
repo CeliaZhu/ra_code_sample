@@ -143,21 +143,16 @@ label var hp_mid "Midpoint of horsepower decile"
 * Scatter
 twoway (scatter wtd_avg_li hp_mid if ye == 1970, mcolor(navy%70)) ///
 (scatter wtd_avg_li hp_mid if ye == 1990, mcolor(orange%70)) ///
-* Fitted curve
 (line li_hat hp_mid if ye == 1970, lcolor(navy%70) lpattern(shortdash)) ///
 (line li_hat hp_mid if ye == 1990, lcolor(orange%70) lpattern(longdash)), ///
-* x- and y- axises
 xlabel(15(15)150) ylabel(5(2)15) ///
-* titles
 xtitle("Midpoint of each horsepower decile") ///
 ytitle("Sales-weighted average of fuel consumption") ///
 title("Relationship between Fuel Consumption and Horsepower in 1970 and 1990", ///
 size(medsmall) color(black)) ///
-* legend area
 legend(label(1 "1970") label(2 "1990") ///
 label(3 "1970 fitted curve") label(4 "1990 fitted curve") ///
 nobox region(lcolor(white)) size(small) rows(1)) ///
-* background
 graphregion(color(white))
 * save
 graph export "$figure/relation_li_hp.png", replace
@@ -180,12 +175,24 @@ graph export "$figure/hp_hist.png", replace
 
 // summary statistics
 * prepare data to generate table
-reshape wide wtd_avg_li hp_min hp_max hp_mid li_hat qu_total, i(hp_decile) j(ye)
+* prepare data to generate texsave table
+qui gen wtd_avg_li_3 = string(wtd_avg_li,"%4.3f") // round up to 3 decimal places
+qui drop wtd_avg_li
+rename wtd_avg_li_3 wtd_avg_li
+qui reshape wide wtd_avg_li hp_min hp_max hp_mid li_hat qu_total, i(hp_decile) j(ye)
 foreach year of numlist 1970 1990 {
-  * horspower range of each decile group
+  * horsepower range of each decile group
   egen hp_range`year' = concat(hp_min`year' hp_max`year'), punct("--")
-  order hp_range`year', before(qu_total`year')
+  * insert comma in total sales quantity
+  gen qu_total`year'_comma = string(qu_total`year', "%15.0fc")
+  drop qu_total`year'
+  rename qu_total`year'_comma qu_total`year'
 }
+
+* reorder variables
+order hp_decile wtd_avg_li1970 hp_range1970 qu_total1970 ///
+wtd_avg_li1990 hp_range1990 qu_total1990
+
 * drop un-needed variables
 drop hp_min* hp_max* hp_mid* li_hat*
 

@@ -56,3 +56,6 @@ io_code_sample/data/market_data (1).zip
 io_code_sample/output/writeup/s.aux
 io_code_sample/output/writeup/s.out
 io_code_sample/output/writeup/s.synctex.gz
+*.aux
+*.pdx
+*.gz
