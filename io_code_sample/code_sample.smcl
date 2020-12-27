@@ -3,7 +3,7 @@
       name:  {res}<unnamed>
        {txt}log:  {res}/Users/celiazhu/Box/projects/ra_code_sample/io_code_sample/code_sample.smcl
   {txt}log type:  {res}smcl
- {txt}opened on:  {res}26 Dec 2020, 23:18:05
+ {txt}opened on:  {res}27 Dec 2020, 15:35:31
 {txt}
 {com}. //_1
 . clear all
@@ -213,9 +213,8 @@
 > nobox region(lcolor(white)) size(small) rows(1)) ///
 > graphregion(color(white))
 {res}{txt}
-{com}. graph export "$figure/`file_name'.png", replace
-{txt}(file /Users/celiazhu/Box/projects/ra_code_sample/io_code_sample/output/figure/relation_li_hp.png written in PNG format)
-
+{com}. qui graph export "$figure/`file_name'.png", replace
+{txt}
 {com}. //_13
 . * prepare data to generate texsave table
 . qui gen wtd_avg_li_3 = string(wtd_avg_li,"%4.3f") // round up to 3 decimal places
@@ -334,7 +333,7 @@
       {txt}name:  {res}<unnamed>
        {txt}log:  {res}/Users/celiazhu/Box/projects/ra_code_sample/io_code_sample/code_sample.smcl
   {txt}log type:  {res}smcl
- {txt}closed on:  {res}26 Dec 2020, 23:18:11
+ {txt}closed on:  {res}27 Dec 2020, 15:35:38
 {txt}{.-}
 {smcl}
 {txt}{sf}{ul off}
