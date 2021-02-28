@@ -3,7 +3,7 @@
       name:  {res}<unnamed>
        {txt}log:  {res}/Users/celiazhu/Box/projects/ra_code_sample/io_code_sample/code_sample.smcl
   {txt}log type:  {res}smcl
- {txt}opened on:  {res}27 Dec 2020, 15:35:31
+ {txt}opened on:  {res}14 Feb 2021, 17:55:06
 {txt}
 {com}. //_1
 . clear all
@@ -13,16 +13,17 @@
 {com}. set varabbrev off
 {txt}
 {com}. 
-. * Data directory
-. global data "/Users/celiazhu/Box/projects/ra_code_sample/io_code_sample/data"
+. // project directory
+. global path "/Users/celiazhu/Box/projects/ra_code_sample/io_code_sample"
 {txt}
-{com}. 
-. * Figure directory
-. global figure "/Users/celiazhu/Box/projects/ra_code_sample/io_code_sample/output/figure"
+{com}. * Data directory
+. global data "$path/data"
 {txt}
-{com}. 
-. * Table directory
-. global table "/Users/celiazhu/Box/projects/ra_code_sample/io_code_sample/output/table"
+{com}. * Figure directory
+. global figure "$path/output/figure"
+{txt}
+{com}. * Table directory
+. global table "$path/output/table"
 {txt}
 {com}. //_2
 . local carcsv: dir "$data/car_data" files "*.csv"
@@ -268,6 +269,10 @@
 . use "$data/clean_data/all_data.dta", clear
 {txt}
 {com}. 
+. * sort observations to better repliacte results
+. sort ye ma_code model_code
+{txt}
+{com}. 
 . * Generate the number of consumers in market j in year t
 . gen n_consumers = pop/4 // 4 is average family size; assume each family potentially buys one car
 {txt}
@@ -294,38 +299,104 @@
 {com}. label var outcome "Outcome"
 {txt}
 {com}. 
-. * Regress outcome variable on a constant, fuel consumption, and price
+. // Regress outcome variable on a constant, fuel consumption, and price; no fixed effects
 . eststo clear
 {txt}
-{com}. eststo: qui reg outcome li eurpr, r
+{com}. * Heteroskedastic robust standard error with no cluster
+. eststo: qui reg outcome li eurpr, r
 {txt}({res}est1{txt} stored)
 
+{com}. qui estadd local se "Non-clustered robust"
+{txt}
 {com}. qui estadd local fe "None"
 {txt}
+{com}. 
+. * cluster on car model
+. eststo: qui reg outcome li eurpr, vce(cluster model_code)
+{txt}({res}est2{txt} stored)
+
+{com}. qui estadd local se "Clustered on model"
+{txt}
+{com}. qui estadd local fe "None"
+{txt}
+{com}. 
+. * cluster on market
+. eststo: qui reg outcome li eurpr, vce(cluster ma_code)
+{txt}({res}est3{txt} stored)
+
+{com}. qui estadd local se "Clustered on market"
+{txt}
+{com}. qui estadd local fe "None"
+{txt}
+{com}. 
+. * cluster on year
+. eststo: qui reg outcome li eurpr, vce(cluster ye)
+{txt}({res}est4{txt} stored)
+
+{com}. qui estadd local se "Clustered on year"
+{txt}
+{com}. qui estadd local fe "None"
+{txt}
+{com}. 
+. // Output regression tables
+. local file_name reg
+{txt}
+{com}. local title "Structural parameters for fuel consumption and price"
+{txt}
+{com}. local label \label{c -(}tab:1{c )-}
+{txt}
+{com}. local reg_tbl_setting "se booktabs width(\textwidth) label nofloat scalars("fe Fixed effects" "se Standard errors")"
+{txt}
+{com}. qui esttab using "$table/`file_name'.tex", replace title("`title' `label'") ///
+> `reg_tbl_setting'
+{txt}
 {com}. //_15
-. * Including car model, market, and year fixed effects
-. sort ye ma_code model_code
+. // Including car model, market, and year fixed effects;
+. * no cluster
+. eststo clear
 {txt}
 {com}. eststo: qui reg outcome li eurpr i.ma_code i.model_code i.ye, r
-{txt}({res}est2{txt} stored)
+{txt}({res}est1{txt} stored)
 
 {com}. qui estadd local fe "car model, market, and year"
 {txt}
 {com}. 
-. * Output table for two models
-. local file_name linear
+. * cluster on model
+. eststo: qui reg outcome li eurpr i.ma_code i.model_code i.ye, vce(cluster model_code)
+{txt}({res}est2{txt} stored)
+
+{com}. qui estadd local se "Clustered on model"
 {txt}
-{com}. local title "Structural parameters for fuel consumption and price"
+{com}. qui estadd local fe "car model, market, and year"
+{txt}
+{com}. 
+. * cluster on market
+. eststo: qui reg outcome li eurpr i.ma_code i.model_code i.ye, vce(cluster ma_code)
+{txt}({res}est3{txt} stored)
+
+{com}. qui estadd local se "Clustered on market"
+{txt}
+{com}. qui estadd local fe "car model, market, and year"
+{txt}
+{com}. 
+. * cluster on year
+. eststo: qui reg outcome li eurpr i.ma_code i.model_code i.ye, vce(cluster ye)
+{txt}({res}est4{txt} stored)
+
+{com}. qui estadd local se "Clustered on year"
+{txt}
+{com}. qui estadd local fe "car model, market, and year"
+{txt}
+{com}. 
+. // Output regression tables
+. local file_name reg_fe
+{txt}
+{com}. local title "Structural parameters for fuel consumption and price (added fixed effects)"
 {txt}
 {com}. local label \label{c -(}tab:2{c )-}
 {txt}
-{com}. sort ye ma_code model_code
-{txt}
-{com}. local reg_tbl_setting "se booktabs width(\textwidth) label" // settings used for all regression tables
-{txt}
 {com}. qui esttab using "$table/`file_name'.tex", replace ///
-> drop(*.ma_code *.model_code *.ye) scalars("fe Fixed effects") ///
-> title("`title' `label'") nofloat ///
+> drop(*.ma_code *.model_code *.ye) title("`title' `label'") ///
 > `reg_tbl_setting'
 {txt}
 {com}. //_^
@@ -333,7 +404,7 @@
       {txt}name:  {res}<unnamed>
        {txt}log:  {res}/Users/celiazhu/Box/projects/ra_code_sample/io_code_sample/code_sample.smcl
   {txt}log type:  {res}smcl
- {txt}closed on:  {res}27 Dec 2020, 15:35:38
+ {txt}closed on:  {res}14 Feb 2021, 17:55:15
 {txt}{.-}
 {smcl}
 {txt}{sf}{ul off}

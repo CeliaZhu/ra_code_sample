@@ -36,14 +36,14 @@ clear all
 set more off
 set varabbrev off
 
+// project directory
+global path "/Users/celiazhu/Box/projects/ra_code_sample/io_code_sample"
 * Data directory
-global data "/Users/celiazhu/Box/projects/ra_code_sample/io_code_sample/data"
-
+global data "$path/data"
 * Figure directory
-global figure "/Users/celiazhu/Box/projects/ra_code_sample/io_code_sample/output/figure"
-
+global figure "$path/output/figure"
 * Table directory
-global table "/Users/celiazhu/Box/projects/ra_code_sample/io_code_sample/output/table"
+global table "$path/output/table"
 ```
 
 Append all car data.
@@ -316,8 +316,8 @@ U_{cijt} = \beta_c \text{FuelConsumption}_{ijt} + \alpha_c Price_{ijt} + \zeta_{
 
 where $c$ is an index for car consumers, $i$ car model, $j$ market, and $t$ year.
 $U$ is the indirect utility, as a function of the car models' average fuel consumption
-and price. $\zeta_{ijt}$ is the un-observables on the year-market-model level.
-$\epsilon_{cijt}$ is un-observables on the year-market-model-consumer level.
+and price. $\zeta_{ijt}$ is the unobservable variables on the year-market-model level.
+$\epsilon_{cijt}$ is unobservable variables on the year-market-model-consumer level.
 
 Assume the structural parameters, $\beta$ and $\alpha$, do not depend on individual
 consumer (every consumer has the same taste for fuel consumption and price),
@@ -339,6 +339,9 @@ as the fuel consumption of the car increases by $1$ unit.
 ```{s}
 use "$data/clean_data/all_data.dta", clear
 
+* sort observations to better repliacte results
+sort ye ma_code model_code
+
 * Generate the number of consumers in market j in year t
 gen n_consumers = pop/4 // 4 is average family size; assume each family potentially buys one car
 label var n_consumers "Number of consumers"
@@ -356,11 +359,41 @@ label var share_no_cars "Share of consumers who buy no cars"
 gen outcome = ln(share) - ln(share_no_cars)
 label var outcome "Outcome"
 
-* Regress outcome variable on a constant, fuel consumption, and price
+// Regress outcome variable on a constant, fuel consumption, and price; no fixed effects
 eststo clear
+* Heteroskedastic robust standard error with no cluster
 eststo: qui reg outcome li eurpr, r
+qui estadd local se "Non-clustered robust"
 qui estadd local fe "None"
+
+* cluster on car model
+eststo: qui reg outcome li eurpr, vce(cluster model_code)
+qui estadd local se "Clustered on model"
+qui estadd local fe "None"
+
+* cluster on market
+eststo: qui reg outcome li eurpr, vce(cluster ma_code)
+qui estadd local se "Clustered on market"
+qui estadd local fe "None"
+
+* cluster on year
+eststo: qui reg outcome li eurpr, vce(cluster ye)
+qui estadd local se "Clustered on year"
+qui estadd local fe "None"
+
+// Output regression tables
+local file_name reg
+local title "Structural parameters for fuel consumption and price"
+local label \label{tab:1}
+local reg_tbl_setting "se booktabs width(\textwidth) label nofloat scalars("fe Fixed effects" "se Standard errors")"
+qui esttab using "$table/`file_name'.tex", replace title("`title' `label'") ///
+`reg_tbl_setting'
 ```
+
+\begin{table}[H]
+\centering
+\input{"/Users/celiazhu/Box/projects/ra_code_sample/io_code_sample/output/table/reg.tex"}
+\end{table}
 
 Price is an endogenous variable in model \ref{eqn:1}. Price is correlated with
 $\zeta_{ijt}$, the demand shock. Assuming the demand shock is observable to
@@ -388,26 +421,39 @@ Controlling for car model, market, and year fixed effects, we report the coeffic
 of fuel consumption and price in model (2) of table \ref{tab:2}.
 
 ```{s}
-* Including car model, market, and year fixed effects
-sort ye ma_code model_code
+// Including car model, market, and year fixed effects;
+* no cluster
+eststo clear
 eststo: qui reg outcome li eurpr i.ma_code i.model_code i.ye, r
 qui estadd local fe "car model, market, and year"
 
-* Output table for two models
-local file_name linear
-local title "Structural parameters for fuel consumption and price"
+* cluster on model
+eststo: qui reg outcome li eurpr i.ma_code i.model_code i.ye, vce(cluster model_code)
+qui estadd local se "Clustered on model"
+qui estadd local fe "car model, market, and year"
+
+* cluster on market
+eststo: qui reg outcome li eurpr i.ma_code i.model_code i.ye, vce(cluster ma_code)
+qui estadd local se "Clustered on market"
+qui estadd local fe "car model, market, and year"
+
+* cluster on year
+eststo: qui reg outcome li eurpr i.ma_code i.model_code i.ye, vce(cluster ye)
+qui estadd local se "Clustered on year"
+qui estadd local fe "car model, market, and year"
+
+// Output regression tables
+local file_name reg_fe
+local title "Structural parameters for fuel consumption and price (added fixed effects)"
 local label \label{tab:2}
-sort ye ma_code model_code
-local reg_tbl_setting "se booktabs width(\textwidth) label" // settings used for all regression tables
 qui esttab using "$table/`file_name'.tex", replace ///
-drop(*.ma_code *.model_code *.ye) scalars("fe Fixed effects") ///
-title("`title' `label'") nofloat ///
+drop(*.ma_code *.model_code *.ye) title("`title' `label'") ///
 `reg_tbl_setting'
 ```
 
 \begin{table}[H]
 \centering
-\input{"/Users/celiazhu/Box/projects/ra_code_sample/io_code_sample/output/table/linear.tex"}
+\input{"/Users/celiazhu/Box/projects/ra_code_sample/io_code_sample/output/table/reg_fe.tex"}
 \end{table}
 
 \textbf{Another source of endogenity} comes from the market

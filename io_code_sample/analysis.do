@@ -157,24 +157,11 @@ graphregion(color(white))
 * save
 graph export "$figure/relation_li_hp.png", replace
 
-* Visualize the distrubition of observed horsepower in 1970 and 1990
-/* gen ye_decile = .
-foreach year of numlist 1970 1990 {
-  replace ye_decile = `year' if ye == `year'
-}
-histogram hp, freq bin(10) by(ye_decile, graphregion(color(white)) ///
-title("Distribution of Horsepower in 1970 and 1990", size(medium)) note("")) ///
-ylabel (0(10)100) xlabel(10(20)150) ///
-fcolor(navy%80) lcolor(white%0)
-graph export "$figure/hp_hist.png", replace
-*/
-
 * For each year, produce a scatterplot of the sales-weighted average of fuel consumption
 * versus the midpoint of each horsepower decile.
 * Collapse data (aggregate by year and decile group)
 
 // summary statistics
-* prepare data to generate table
 * prepare data to generate texsave table
 qui gen wtd_avg_li_3 = string(wtd_avg_li,"%4.3f") // round up to 3 decimal places
 qui drop wtd_avg_li
