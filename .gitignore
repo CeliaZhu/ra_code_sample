@@ -62,3 +62,5 @@ io_code_sample/output/writeup/s.synctex.gz
 *.smcl
 io_code_sample/io_code_sample.do
 *.out
+shiny/app.R
+shiny/clean_data.R
