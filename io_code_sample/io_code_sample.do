@@ -3,6 +3,7 @@
 /*  Stata Code Sample
     Author: Xiling (Celia) Zhu xiling@uchicago.edu
     Date: Feb 14, 2020
+    Output: https://github.com/CeliaZhu/ra_code_sample/blob/master/io_code_sample/io_code_sample_report.pdf
 */
 /**********************************************************************/
 
