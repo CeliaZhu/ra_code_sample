@@ -2,7 +2,6 @@
 *.dta
 *.csv
 *.rds
-
 *.log
 .Rproj.user/9E18C7F8/pcs/files-pane.pper
 .Rproj.user/9E18C7F8/pcs/source-pane.pper
@@ -59,7 +58,6 @@ io_code_sample/output/writeup/s.synctex.gz
 *.pdx
 *.gz
 *.smcl
-io_code_sample/io_code_sample.do
 *.out
 shiny/app.R
 shiny/clean_data.R
