@@ -1,0 +1,24 @@
+{
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\caption{Structural parameters for fuel consumption and price \label{tab:2}}
+\begin{tabular*}{\textwidth}{@{\hskip\tabcolsep\extracolsep\fill}l*{2}{c}}
+\toprule
+                    &\multicolumn{1}{c}{(1)}&\multicolumn{1}{c}{(2)}\\
+                    &\multicolumn{1}{c}{Outcome}&\multicolumn{1}{c}{Outcome}\\
+\midrule
+Fuel consumption (liter per km)&      -0.214\sym{***}&      -0.138\sym{***}\\
+                    &   (0.00926)         &    (0.0178)         \\
+\addlinespace
+Price in common currency&  -0.0000578\sym{***}&   -0.000103\sym{***}\\
+                    &(0.00000421)         & (0.0000102)         \\
+\addlinespace
+Constant            &      -5.067\sym{***}&      -4.610\sym{***}\\
+                    &    (0.0784)         &     (0.217)         \\
+\midrule
+Observations        &        7679         &        7653         \\
+Fixed effects       &        None         &car model, market, and year         \\
+\bottomrule
+\multicolumn{3}{l}{\footnotesize Standard errors in parentheses}\\
+\multicolumn{3}{l}{\footnotesize \sym{*} \(p<0.05\), \sym{**} \(p<0.01\), \sym{***} \(p<0.001\)}\\
+\end{tabular*}
+}

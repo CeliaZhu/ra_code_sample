@@ -1,9 +1,8 @@
-*.png
-*.tex
+
 *.dta
 *.csv
 *.rds
-*.pdf
+
 *.log
 .Rproj.user/9E18C7F8/pcs/files-pane.pper
 .Rproj.user/9E18C7F8/pcs/source-pane.pper
@@ -64,3 +63,5 @@ io_code_sample/io_code_sample.do
 *.out
 shiny/app.R
 shiny/clean_data.R
+epic_datatask_answers.pdf
+io_code_sample/data_task_instructions dube.pdf

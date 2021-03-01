@@ -1,0 +1,118 @@
+\documentclass[12pt]{article}
+
+\usepackage{amssymb,amsmath,amsfonts,geometry,ulem,graphicx,caption,setspace,pdflscape}
+\usepackage{sectsty}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,
+    urlcolor=blue
+    }
+\sectionfont{\fontsize{15}{12}\selectfont}
+\usepackage{float, booktabs, tabularx}
+\normalem
+
+\geometry{left=0.8in,right=0.8in,top=1.0in,bottom=1.0in}
+
+\begin{document}
+
+\title{Stata Code Sample}
+\author{Xiling (Celia) Zhu \href{mailto:xiling@uchicago.edu}{xiling@uchicago.edu} }
+\date{\today}
+\maketitle
+
+\setcounter{page}{1}
+
+This task was inspired by IO research on the automobile industry. I was provided with car model sales data in five European markets. \texttt{car\ data} contains the manufacturing characteristics and the quantity sold of each car model within each market, from 1970 to 1990. \texttt{market\ data} contains the GDP, population, and tax rate of each market in each year.
+
+\section{Data Cleaning}\label{data-cleaning}
+
+The central task of the section is to merge \texttt{car\ data} and \texttt{market\ data} into one panel with 3 dimensions: car model ($i$), market ($j$), and year ($t$). In each row, it contains car model manufacturing characteristics, price, and quantity sold, market GDP, population, and tax rate.
+
+\section{Data Exploration}\label{data-exploration}
+
+This section uses the model-market-year panel dataset to visualize the relationship between fuel consumption (\texttt{li}) and horsepower (\texttt{hp}) in the years 1970 and 1990.
+
+For the years 1970 and 1990, group cars by decile of observed horsepower in that year, and then compute the sales weighted average of fuel consumption for cars in each horsepower decile.
+
+For each year, produce a scatter plot of the sales-weighted average of fuel consumption versus the midpoint of each horsepower decile.
+
+For each year, regress fuel consumption on a constant, horsepower, and log(horsepower), using sales as sample weights. Display the fitted curves on the scatterplot.
+
+\begin{figure}[H]
+\centering
+\caption{Relationship between fuel consumption and horsepower by year \label{fig:1}}
+\includegraphics[width = \textwidth]{output/figure/relation_li_hp.png}
+\end{figure}
+
+Based on figure \ref{fig:1}, in general, the sales-weighted average fuel consumption increased as the horsepower increased. Comparing with 1970, the sales-weighted average fuel consumption decreased in 1990 in all horsepower decile groups, and the fitted curve was flatter in 1990. We can extrapolate that, controlling for horsepower, the sales-weighted average fuel consumption decreased over time -- cars in the five European markets became more fuel-efficient.
+
+Suppose a social cost of carbon was imposed across Europe in 1991, causing the price of gas to increases across all five markets. This imposed social cost of carbon would disincentivize consumers to buy cars that have a high fuel consumption, or the cars that have a high horsepower, which positively correlates with fuel consumption. As a result, the sales-weighted average fuel consumption of the cars in the high horsepower group would fall in 1991. The fitted curve in 1991 would be flatter than the one in 1990, especially in the tail of the curve.
+
+Please see table \ref{tab:1} for summary statistics of the sales-weighted average of fuel consumption by decile of horsepower in 1970 and 1990.
+
+\begin{table}
+\input{"output/table/hp_sum_table.tex"}
+\end{table}
+
+\section{Estimation and Causal
+Inference}\label{estimation-and-causal-inference}
+
+For each car model $i$, market $j$, and year $t$, construct the outcome variable $(Y_{ijt} = log(S_{ijt}) - log(S_{0ijt})$, where $N_{jt}$ is the number of consumers in market $j$ year $t$, assuming the average size of family is four and each family potentially buys one car or no cars in a given year, $S_{ijt}$ is the market share for car model $i$ in market $j$ year $t$, $S_{0jt}$ is the share of consumers who buy no cars in market $j$ year $t$.
+
+A standard logit demand model: 
+\begin{equation*}
+U_{cijt} = \beta_c \text{FuelConsumption}_{ijt} + \alpha_c \text{Price}_{ijt} + \zeta_{ijt} + \epsilon_{cijt}
+\end{equation*}
+
+where $c$is an index for car consumers, $i$ car model, $j$ market, and $t$ year. $U$ is the indirect utility, as a function of
+the car models' average fuel consumption and price. $\zeta_{ijt}$ is the unobservable variables on the year-market-model level.  $\epsilon_{cijt}$ is unobservable variables on the year-market-model-consumer level.
+
+Assume the structural parameters, $\beta$ and $\alpha$, do not
+depend on individual consumer (every consumer has the same taste for
+fuel consumption and price), $\epsilon_{cijt}$ has type-one extreme
+value function, and all consumers who did not buy a car chose the
+outside option, which gives zero utility. Then, we can estimate the
+structural parameter through the following log-linear model:
+
+\begin{equation} \label{eqn:1}
+log(S_{ijt}) - log(S_{0ijt}) = \beta \text{FuelConsumption}_{ijt} + \alpha Price_{ijt} + \zeta_{ijt}
+\end{equation}
+
+$\zeta_{ijt}$ is a shock on the demand side.
+
+Table \ref{tab:2} reports the results of this regression. We estimate the coefficient of fuel consumption, $\beta$, to be
+$-0.214$. It means that, holding everything else equal, the consumers' indirect utility decreases by $0.214$ unit as the fuel consumption of the car increases by $1$ unit.
+
+\begin{table}[H]
+\centering
+\input{"output/table/reg.tex"}
+\end{table}
+
+Table \ref{tab:2} also reports the standard errors under different specifications.  Column (1) reports the heteroskedastic robust standard errors and column (2) the standard errors clustered on car models.  To cluster the standard errors on car models, we assume the observations are independent across car models but not necessarily within each model.  This assumption is not entirely plausible because different car models may be similar in design.  Other specifications of standard errors are less convincing.  For instance, to cluster on years, we need to assume that observations are independent across years.  But it is reasonable to assume that consumers' preferences are auto-correlated. 
+
+Price is an endogenous variable in model \ref{eqn:1}. Price is correlated with $\zeta_{ijt}$, the demand shock. Assuming the demand shock is observable to manufacturers, then manufacturers would adjust the prices accordingly.
+
+There are two different sources of endogeneity that could bias our estimate of the structural parameter of price.
+
+One source of endogeneity is the un-observalbe features of the car models, markets, or years. For example, consumers may prefer one particular type of car models for reasons other than its fuel consumption or price, but for the models' un-observable features. Denote them as $\phi_i$. Similarly, consumers may experience some market-specific, model-and-year-invariant shock, $\phi_j$, or some year-specifc, model-and-market-invariant shock, $\phi_t$.
+
+We can mitigate this type of endogeneity by including car model, market, and year fixed effects.
+
+\begin{equation} \label{eqn:2}
+log(S_{ijt}) - log(S_{0ijt}) = \beta \text{FuelConsumption}_{ijt} + \alpha Price_{ijt} + \zeta_{ijt} + \phi_i + \phi_j + \phi_t
+\end{equation}
+
+Controlling for car model, market, and year fixed effects, we report the coefficients of fuel consumption and price in table \ref{tab:3}
+
+\begin{table}[H]
+\centering
+\input{"output/table/reg_fe.tex"}
+\end{table}
+
+Another source of endogenity comes from the market structure. For example, if the car markets in the five European countries are not perfectly competitive, there still exists potential correlation between price and demand shock even if we controlled for all fixed effects.
+
+To mitigate the second source of endogenity, we need to use an instrument variable for price. One candidate of the instrument variable is the transportation cost: the cost needed to transport cars from their manufacturing locations to their markets. This is because the transportation cost is the supply-shifter that does not shift the demand: it's uncorrelated with the demand shock $\zeta_{ijt}$.
+
+\end{document}

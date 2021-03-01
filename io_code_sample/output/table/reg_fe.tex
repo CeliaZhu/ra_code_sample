@@ -1,0 +1,25 @@
+{
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\caption{Structural parameters for fuel consumption and price (added fixed effects) \label{tab:2}}
+\begin{tabular*}{\textwidth}{@{\hskip\tabcolsep\extracolsep\fill}l*{4}{c}}
+\toprule
+                    &\multicolumn{1}{c}{(1)}&\multicolumn{1}{c}{(2)}&\multicolumn{1}{c}{(3)}&\multicolumn{1}{c}{(4)}\\
+                    &\multicolumn{1}{c}{Outcome}&\multicolumn{1}{c}{Outcome}&\multicolumn{1}{c}{Outcome}&\multicolumn{1}{c}{Outcome}\\
+\midrule
+Fuel consumption (liter per km)&      -0.138\sym{***}&      -0.138\sym{***}&      -0.138\sym{*}  &      -0.138\sym{***}\\
+                    &    (0.0178)         &    (0.0351)         &    (0.0300)         &    (0.0148)         \\
+\addlinespace
+Price in common currency&   -0.000103\sym{***}&   -0.000103\sym{***}&   -0.000103\sym{**} &   -0.000103\sym{***}\\
+                    & (0.0000102)         & (0.0000255)         & (0.0000145)         & (0.0000187)         \\
+\addlinespace
+Constant            &      -4.610\sym{***}&      -4.610\sym{***}&      -4.610\sym{***}&      -4.610\sym{***}\\
+                    &     (0.217)         &     (0.360)         &     (0.378)         &     (0.208)         \\
+\midrule
+Observations        &        7653         &        7653         &        7653         &        7653         \\
+Fixed effects       &car model, market, and year         &car model, market, and year         &car model, market, and year         &car model, market, and year         \\
+Standard errors     &                     &Clustered on model         &Clustered on market         &Clustered on year         \\
+\bottomrule
+\multicolumn{5}{l}{\footnotesize Standard errors in parentheses}\\
+\multicolumn{5}{l}{\footnotesize \sym{*} \(p<0.05\), \sym{**} \(p<0.01\), \sym{***} \(p<0.001\)}\\
+\end{tabular*}
+}

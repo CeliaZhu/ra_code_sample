@@ -1,0 +1,25 @@
+{
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\caption{Structural parameters for fuel consumption and price \label{tab:1}}
+\begin{tabular*}{\textwidth}{@{\hskip\tabcolsep\extracolsep\fill}l*{4}{c}}
+\toprule
+                    &\multicolumn{1}{c}{(1)}&\multicolumn{1}{c}{(2)}&\multicolumn{1}{c}{(3)}&\multicolumn{1}{c}{(4)}\\
+                    &\multicolumn{1}{c}{Outcome}&\multicolumn{1}{c}{Outcome}&\multicolumn{1}{c}{Outcome}&\multicolumn{1}{c}{Outcome}\\
+\midrule
+Fuel consumption (liter per km)&      -0.214\sym{***}&      -0.214\sym{***}&      -0.214\sym{**} &      -0.214\sym{***}\\
+                    &   (0.00926)         &    (0.0308)         &    (0.0391)         &    (0.0122)         \\
+\addlinespace
+Price in common currency&  -0.0000578\sym{***}&  -0.0000587\sym{***}&  -0.0000578\sym{**} &  -0.0000578\sym{***}\\
+                    &(0.00000421)         & (0.0000123)         &(0.00000936)         &(0.00000854)         \\
+\addlinespace
+Constant            &      -5.067\sym{***}&      -5.053\sym{***}&      -5.067\sym{***}&      -5.067\sym{***}\\
+                    &    (0.0784)         &     (0.295)         &     (0.317)         &    (0.0884)         \\
+\midrule
+Observations        &        7679         &        7653         &        7679         &        7679         \\
+Fixed effects       &        None         &        None         &        None         &        None         \\
+Standard errors     &Non-clustered robust         &Clustered on model         &Clustered on market         &Clustered on year         \\
+\bottomrule
+\multicolumn{5}{l}{\footnotesize Standard errors in parentheses}\\
+\multicolumn{5}{l}{\footnotesize \sym{*} \(p<0.05\), \sym{**} \(p<0.01\), \sym{***} \(p<0.001\)}\\
+\end{tabular*}
+}
