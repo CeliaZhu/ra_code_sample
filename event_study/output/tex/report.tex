@@ -1,0 +1,111 @@
+\documentclass[12pt]{article}
+
+\usepackage{amssymb,amsmath,amsfonts,eurosym,geometry,ulem,graphicx,caption,color,setspace,sectsty,comment,footmisc,caption,natbib,pdflscape,subfigure,array,hyperref}
+\usepackage{sectsty}
+\usepackage{hyperref}
+\sectionfont{\fontsize{12}{15}\selectfont}
+\usepackage{float, booktabs}
+\normalem
+
+\onehalfspacing
+
+\geometry{left=1.0in,right=1.0in,top=1.0in,bottom=1.0in}
+
+\begin{document}
+
+\title{Data Skills Evaluation Report}
+\author{Xiling (Celia) Zhu\thanks{xiling@uchicago.edu}}
+\date{November, 2020}
+\maketitle
+
+\setcounter{page}{1}
+
+\doublespacing
+
+
+\section{Summary Statistics} 
+Table 1 reports the counts of moves in the sample across US regions and between urban and non urban. From 1979 to 2012, $7,489$ respondents in the sample moved across regions, and $12,359$ respondents moved between urban and non-urban areas. 
+
+Table 2 reports the mean wage, employment, and education attainment in each region. In the period of 1979 to 2012, the average wage was the highest in Region 1 (Northeast) with $17581.75$\footnote{The unit of wage is defined by this task, though the original NLSY 79 used actual dollars reported by respondents.}, and lowest in Region 3 (South) with $14436.54$. In the four regions, the employment rates were around 80\% to 83\%, and average years of schooling were around 10 years, which were similar across all four regions. Region 2 (North Central) had the highest employment rate in the period of 1979 to 2012, and Region 1 (Northeast) had the highest education attainment. 
+
+Table 3 reports the mean wages, employment, and education attainment in urban and non-urban areas. From 1979 to 2012, urban areas had higher average wage, employment rate, and education attainment than non-urban areas. 
+
+\begin{table}[H]
+\caption{Counts of Moves}
+\input{C:/Users/Zhuxl/Box/projects/ra_code_sample/event_study/output/tbl/move_counts.tex}
+\end{table}
+
+\begin{table}[H]
+\caption{Average Wage, Employment, and Education Attainment in Four Main Regions}
+\input{C:/Users/Zhuxl/Box/projects/ra_code_sample/event_study/output/tbl/mean_region.tex}
+\end{table}
+
+\begin{table}[H]
+\caption{Average Wage, Employment, and Education Attainment in Urban and Non Urban}
+\input{C:/Users/Zhuxl/Box/projects/ra_code_sample/event_study/output/tbl/mean_urban.tex}
+\end{table}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Event Studies} 
+
+Figure 1 reports the trend of wages for the respondents who moved across regions, in the five-year window centered at the moving year. Figure 2 reports the trend of wages for the respondents who moved between urban and non urban, in the five year window centered at the moving year. 
+
+To visually assess the effect of moving on wages, I only used the sub-sample of respondents who made exactly one move in the five-year window. Arguably, there would be selection bias if we include people who moved more frequently. For example, their frequent moves were probably attributable to the financial stress. 
+
+Generally, the two figures exhibit similar trends of wage in the five year window. On average, movers experienced a fall in wage in the first year of moving ($t = 0$), then their wage would gradually increase in the following two years. In the third year of their moving ($ t = 2$), the average income surpassed the highest average income in the two years leading to the moving ($t = -2, -1$).
+
+Except for other moving reasons such as college and military service, it's reasonable to assume movers in the sample were attracted by a higher wage. Then a question naturally arises: why did movers' average wage decrease in the first year of moving ($t = 0$)? 
+
+One hypothesis is that the wage decrease at $t = 0$ is caused by the loss of network, which might hurt job searching. Consequently, the movers had to accept a lower wage in their first year. The wage decrease for across-region movers was more drastic than that for urban-non urban movers. This is probably because the loss of social network was more significant when the respondent moved to a different region, while the moves between urban and non urban could be of shorter distance, and the movers were still able to maintain part of his/her network. 
+\begin{figure}[H]
+\caption{Average wage of movers across regions}
+\includegraphics[width = \textwidth]{C:/Users/Zhuxl/Box/projects/ra_code_sample/event_study/output/fig/region_mean_wage.png}
+\end{figure}
+
+\begin{figure}[H]
+\caption{Average wage of movers between urban and non urban}
+\includegraphics[width = \textwidth]{C:/Users/Zhuxl/Box/projects/ra_code_sample/event_study/output/fig/urban_mean_wage.png}
+\end{figure}
+
+\section{Comparing Movers to Stayers} 
+
+Since I had no information on the sampling process of NLSY 79, which was a survey data, I first assumed it is a random sample. Table  4 and 6 reports the differences between the wage of movers and stayers in both region or origin (table 4) and region of arrival (table 6), free of clusters.  Table  5 and 7 reports the differences between the wage of movers and stayers in both region or origin (table 5) and region of arrival (table 7), assuming wage residual was clustered on cohort. 
+
+The model I used for comparison is adapted from the Mincer equation.
+
+To compare movers and stayers in the region of origin:
+\begin{equation}
+lnw = lnw_0 + \alpha Move from_r  + \beta_1 educ + \beta_2 experience + \beta_3 experience^2 + \beta_4 gender+ \epsilon
+\end{equation}
+
+To compare movers and stayers in the region of arrival:
+\begin{equation}
+lnw = lnw_0 + \alpha Move to_r  + \beta_1 educ + \beta_2 experience + \beta_3 experience^2 + \beta_4 gender + \epsilon
+\end{equation}
+
+Where $Move from_r$ is a dummy variable indicating the movers and stayers: $Move from_r = 1$ if the respondent moved out of region $r$, $Move from_r = 0$ if the respondent stayed in the of region $r$. Similarly, $Move to_r = 1$ if the respondent moved into region $r$, $Move to_r = 0$ if the respondent stayed in the of region $r$. 
+
+Age was used as a proxy for experience. 
+
+The rate of return from both moving out of and into region 1 is negative. The rate of return from moving out of region 4 is negative, though the effect was not significant when clustered on cohort. 
+\begin{table}[H]
+\caption{Compare movers out of a region to stayers at the same region (no cluster of wage residulas)}
+\input{C:/Users/Zhuxl/Box/projects/ra_code_sample/event_study/output/tbl/compare_origin_simple.tex}
+\end{table}
+
+\begin{table}[H]
+\caption{Compare movers out of a region to stayers at the same region (cluster wage residuals on cohort)}
+\input{C:/Users/Zhuxl/Box/projects/ra_code_sample/event_study/output/tbl/compare_origin_cluster.tex}
+\end{table}
+
+\begin{table}[H]
+\caption{Compare movers into a region to stayers at the same region (no cluster of wage residuals}
+\input{C:/Users/Zhuxl/Box/projects/ra_code_sample/event_study/output/tbl/compare_arrival_simple.tex}
+\end{table}
+
+\begin{table}[H]
+\caption{Compare movers into a region to stayers at the same region (cluster wage residuals on cohort)}
+\input{C:/Users/Zhuxl/Box/projects/ra_code_sample/event_study/output/tbl/compare_arrival_cluster.tex}
+\end{table}
+
+\end{document}

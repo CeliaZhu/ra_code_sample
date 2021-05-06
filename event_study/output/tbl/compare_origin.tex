@@ -1,0 +1,36 @@
+{
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\begin{tabular*}{\textwidth}{@{\hskip\tabcolsep\extracolsep\fill}l*{4}{c}}
+\toprule
+                    &\multicolumn{1}{c}{Wage}&\multicolumn{1}{c}{Wage}&\multicolumn{1}{c}{Wage}&\multicolumn{1}{c}{Wage}\\
+\midrule
+Move from region 1  &     -2173.1         &                     &                     &                     \\
+                    &    (1186.9)         &                     &                     &                     \\
+\addlinespace
+Move from region 2  &                     &      1945.2         &                     &                     \\
+                    &                     &     (999.8)         &                     &                     \\
+\addlinespace
+Move from region 3  &                     &                     &      2132.1\sym{*}  &                     \\
+                    &                     &                     &     (889.9)         &                     \\
+\addlinespace
+Move from region 4  &                     &                     &                     &      -332.9         \\
+                    &                     &                     &                     &    (1070.4)         \\
+\addlinespace
+Age                 &      1129.1\sym{***}&      1094.4\sym{***}&       972.6\sym{***}&      1040.3\sym{***}\\
+                    &     (41.03)         &     (33.88)         &     (25.30)         &     (34.44)         \\
+\addlinespace
+Education attainment&      1886.1\sym{***}&      1044.8\sym{***}&      1371.7\sym{***}&       988.5\sym{***}\\
+                    &     (345.9)         &     (263.4)         &     (201.8)         &     (257.3)         \\
+\addlinespace
+Gender              &    -11153.5\sym{***}&    -11598.4\sym{***}&     -8877.9\sym{***}&    -10296.8\sym{***}\\
+                    &    (1141.8)         &     (817.0)         &     (631.1)         &     (863.8)         \\
+\addlinespace
+Constant            &    -19164.3\sym{***}&    -10773.8\sym{***}&    -15848.8\sym{***}&    -10701.8\sym{***}\\
+                    &    (3262.2)         &    (2663.7)         &    (1775.0)         &    (2381.3)         \\
+\midrule
+Observations        &       41875         &       51458         &       83389         &       43499         \\
+\bottomrule
+\multicolumn{5}{l}{\footnotesize Standard errors in parentheses}\\
+\multicolumn{5}{l}{\footnotesize \sym{*} \(p<0.05\), \sym{**} \(p<0.01\), \sym{***} \(p<0.001\)}\\
+\end{tabular*}
+}

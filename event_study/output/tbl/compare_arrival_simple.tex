@@ -1,0 +1,39 @@
+{
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\begin{tabular*}{\textwidth}{@{\hskip\tabcolsep\extracolsep\fill}l*{4}{c}}
+\toprule
+                    &\multicolumn{1}{c}{Log wage}&\multicolumn{1}{c}{Log wage}&\multicolumn{1}{c}{Log wage}&\multicolumn{1}{c}{Log wage}\\
+\midrule
+Move to region 1    &      -0.201\sym{***}&                     &                     &                     \\
+                    &    (0.0134)         &                     &                     &                     \\
+\addlinespace
+Move to region 2    &                     &     -0.0194         &                     &                     \\
+                    &                     &    (0.0127)         &                     &                     \\
+\addlinespace
+Move to region 3    &                     &                     &      0.0142         &                     \\
+                    &                     &                     &   (0.00914)         &                     \\
+\addlinespace
+Move to region 4    &                     &                     &                     &     -0.0223         \\
+                    &                     &                     &                     &    (0.0124)         \\
+\addlinespace
+Age                 &       0.404\sym{***}&       0.361\sym{***}&       0.369\sym{***}&       0.347\sym{***}\\
+                    &   (0.00536)         &   (0.00482)         &   (0.00355)         &   (0.00502)         \\
+\addlinespace
+Age squared         &    -0.00473\sym{***}&    -0.00413\sym{***}&    -0.00430\sym{***}&    -0.00396\sym{***}\\
+                    & (0.0000771)         & (0.0000695)         & (0.0000514)         & (0.0000724)         \\
+\addlinespace
+Education attainment&      0.0378\sym{***}&      0.0456\sym{***}&      0.0490\sym{***}&      0.0397\sym{***}\\
+                    &   (0.00310)         &   (0.00286)         &   (0.00204)         &   (0.00280)         \\
+\addlinespace
+Gender              &      -0.408\sym{***}&      -0.574\sym{***}&      -0.426\sym{***}&      -0.533\sym{***}\\
+                    &    (0.0123)         &    (0.0110)         &   (0.00807)         &    (0.0115)         \\
+\addlinespace
+Constant            &       1.992\sym{***}&       2.671\sym{***}&       2.319\sym{***}&       2.982\sym{***}\\
+                    &    (0.0923)         &    (0.0844)         &    (0.0614)         &    (0.0869)         \\
+\midrule
+Observations        &       31486         &       39860         &       69861         &       36389         \\
+\bottomrule
+\multicolumn{5}{l}{\footnotesize Standard errors in parentheses}\\
+\multicolumn{5}{l}{\footnotesize \sym{*} \(p<0.05\), \sym{**} \(p<0.01\), \sym{***} \(p<0.001\)}\\
+\end{tabular*}
+}
