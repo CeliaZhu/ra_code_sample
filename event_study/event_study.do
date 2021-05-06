@@ -1,5 +1,5 @@
 //**********************************************************************/
-/*  BFI Labor Initiative Evaluation Task
+/*  Evaluation Task
     Author: Xiling (Celia) Zhu xiling@uchicago.edu
     Date: November 09, 2020 */
 /**********************************************************************/
