@@ -1,5 +1,5 @@
 # Step 3: Analysis
-# The goal of this step is to find whether campaign visits increase a candidate's twitter presence.
+# The goal of this step is to find whether campaign visits increase a candidate's twitter presence using event study.
 # To replicate output files, please first run the .Rporj file, and execute R scripts in the project environment.
 library(tidyverse)
 library(data.table)
