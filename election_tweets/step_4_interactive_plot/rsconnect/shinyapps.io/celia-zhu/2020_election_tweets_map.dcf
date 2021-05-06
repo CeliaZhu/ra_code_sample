@@ -1,0 +1,12 @@
+name: 2020_election_tweets_map
+title: 2020_election_tweets_map
+username:
+account: celia-zhu
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 3784451
+bundleId: 4359267
+url: https://celia-zhu.shinyapps.io/2020_election_tweets_map/
+when: 1615996525.0437
+asMultiple: FALSE
+asStatic: FALSE
